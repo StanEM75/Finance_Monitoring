@@ -72,7 +72,7 @@ if data and "data" in data:
     # Print the shape of the DataFrame to be sure we have enougn data
     print(df.shape)
     # Export the dataframe to a CSV file for further analysis
-    df.write_csv("data/outputs/stock_data.csv")
+    df.write_csv("../data/outputs/stock_data.csv")
 
 else:
     print("Aucune donnée renvoyée par l'API.")
