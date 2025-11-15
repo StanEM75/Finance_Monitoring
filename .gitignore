@@ -1,7 +1,6 @@
 # -----------------------------
 # 📦 PYTHON ENVIRONMENTS
 # -----------------------------
-# Virtual environments
 .venv/
 venv/
 env/
@@ -14,12 +13,9 @@ __pycache__/
 # -----------------------------
 # ⚙️ CONFIG / ENVIRONMENT FILES
 # -----------------------------
-# Environment variables
 .env
 .env.local
 .env.*.local
-
-# Credentials and API keys
 *.key
 *.pem
 *.json
@@ -33,7 +29,6 @@ api_keys/
 # -----------------------------
 # 🧠 DATA & CACHE
 # -----------------------------
-# Local data exports
 data/
 datasets/
 raw_data/
@@ -44,53 +39,39 @@ tmp/
 *.xlsx
 *.json
 *.db
-
-# Model or intermediate artifacts
 *.pkl
 *.joblib
 *.h5
 
-# Cache
 .cache/
 .ipynb_checkpoints/
-__pycache__/
 .DS_Store
 
 # -----------------------------
 # 📊 NOTEBOOKS / REPORTS
 # -----------------------------
-# Auto-saves or checkpoints
 notebooks/.ipynb_checkpoints/
 *.nbconvert.ipynb
-
-# Generated HTML reports
 reports/
 *.html
 
 # -----------------------------
 # 🧰 TOOLING
 # -----------------------------
-# Logs
 *.log
 logs/
-
-# VSCode / IDE
 .vscode/
 .idea/
 *.code-workspace
 
-# Jupyter / Deepnote metadata
 .jupyter/
 .deepnote/
 
 # -----------------------------
 # 🧩 DBT / PROJECT-SPECIFIC
 # -----------------------------
-# Compiled & target folders
 target/
 dbt_packages/
-
-# Profiles (local credentials)
 profiles.yml
 *.profiles.yml
 
@@ -100,3 +81,50 @@ profiles.yml
 .pytest_cache/
 .coverage
 htmlcov/
+
+# -----------------------------
+# 🚀 ASTRONOMER / AIRFLOW
+# -----------------------------
+.astro/
+
+logs/
+*/logs/
+airflow_logs/
+airflow*/logs/
+
+airflow/tmp/
+airflow/xcom/
+airflow/dags/__pycache__/
+
+airflow-webserver.pid
+airflow-webserver.out
+airflow-webserver.err
+
+airflow-scheduler.pid
+airflow-scheduler.out
+airflow-scheduler.err
+
+celerybeat-schedule
+celerybeat.pid
+celerybeat.out
+celerybeat.err
+
+airflow.db
+airflow.db-journal
+
+docker-compose.override.yml
+docker-compose*.log
+**/Dockerfile~
+docker-compose.yml~
+.dockerignore
+
+.venv_airflow/
+runtime_venv/
+.astro/runtime/
+
+plugins/__pycache__/
+plugins/.ipynb_checkpoints/
+
+dag_bag/
+.dag-bag/
+.dag_bundles/

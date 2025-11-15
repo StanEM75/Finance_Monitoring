@@ -42,7 +42,7 @@ params = {
     # Comma-separated list of stock symbols
     "symbols": ",".join(symbols),
     # Limit the number of records returned to 365 (days)
-    "limit": 365  # 1 an de données
+    "limit": 365
 }
 
 
@@ -57,7 +57,7 @@ def get_stock_data(url, params):
         return response.json()
     # Handle request exceptions
     except requests.exceptions.RequestException as e:
-        print(f"Erreur lors de l'appel API : {e}")
+        print(f"Error when calling the API : {e}")
         return None
 
 # Call the function to call the API and get stock data required
@@ -75,4 +75,5 @@ if data and "data" in data:
     df.write_csv("../data/outputs/stock_data.csv")
 
 else:
-    print("Aucune donnée renvoyée par l'API.")
+    print("No data obtained with the API.")
+
