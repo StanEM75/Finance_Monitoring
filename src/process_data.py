@@ -50,6 +50,8 @@ financial_data = financial_data.rename(columns={'name': 'company_name'})
 columns_to_keep = [ 
                     # We only keep the French date as it is the developer's local time
                     'france_date', 
+                    # We keep the symbol to identify each stock
+                    'symbol',
                     # We keep the company name to identify each row
                     'company_name',
                     # We keep the opening price to compare it with the closing price
@@ -126,6 +128,7 @@ financial_data['price_variation_within_the_day'] = financial_data['close_in_usd'
 # Display the final processed dataframe with only the necessary columns
 final_columns_to_keep = [
                             'france_date',
+                            'symbol',
                             'company_name',
                             'open_in_usd',
                             'close_in_usd',

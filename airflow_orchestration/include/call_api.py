@@ -13,7 +13,7 @@ def run_fetch_stocks(
     url = "https://api.marketstack.com/v2/eod"
     api_key = os.getenv("API_KEY")
 
-    symbols = ["TSLA", "NVDA", "MSFT", "AMZN", "RACE"]
+    symbols = ["TSLA", "NVDA", "MSFT", "AMZN", "RACE", "PLTR", "META"]
 
     params = {
         "access_key": api_key,
