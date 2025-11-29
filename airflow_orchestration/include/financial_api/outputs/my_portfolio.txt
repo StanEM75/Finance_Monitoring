@@ -1,0 +1,8 @@
+"PLTR": 8 actions bought on 2025 September 3 at the price of 156$ each
+"META": 2 actions bought on 2025 October 31 at the price of 650$ each
+"RACE": 3 actions bought on 2025 November 4 at the price of 396.84$ each
+"NVDA": 3 actions bought on 2025 October 14 at the price of 182$ each
+"TSLA": 2 actions bought on 2025 October 22 at the price of 430$
+"MSFT": 2 actions bought on 2025 November 4 at the price of 511.64$ each 
+"AMZN": 5 actions bought on 2025 September 30 at the price of 220$ each
+

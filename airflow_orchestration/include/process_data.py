@@ -37,6 +37,7 @@ def process_stock_data(
     # Keep relevant columns
     columns_to_keep = [
         'france_date',
+        'symbol',
         'company_name',
         'open',
         'close',
@@ -86,6 +87,7 @@ def process_stock_data(
     # Final columns
     final_columns_to_keep = [
         'france_date',
+        'symbol',
         'company_name',
         'open_in_usd',
         'close_in_usd',
