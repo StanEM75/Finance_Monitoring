@@ -1,0 +1,23 @@
+[project]
+name = "financial-api"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "currex>=0.2.0",
+    "dbt-core>=1.11.11",
+    "dbt-duckdb>=1.10.1",
+    "dotenv>=0.9.9",
+    "duckdb>=1.4.1",
+    "forex-python>=1.9.2",
+    "great-tables>=0.20.0",
+    "matplotlib>=3.10.7",
+    "numpy>=2.3.4",
+    "pandas>=2.3.3",
+    "pendulum>=3.1.0",
+    "polars>=1.35.1",
+    "pre-commit>=4.3.0",
+    "requests>=2.32.5",
+    "seaborn>=0.13.2",
+]
