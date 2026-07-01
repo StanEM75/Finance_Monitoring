@@ -1,0 +1,274 @@
+version: 2
+
+sources:
+  - name: raw
+    schema: main
+    tables:
+      - name: raw_stock_data
+        description: Daily stock prices and trading information.
+
+        columns:
+          - name: symbol
+            data_type: varchar
+            description: Stock ticker. Very useful to recognize a stock.
+            data_tests:
+              - not_null:
+                  config:
+                    store_failures: true
+                    schema: DBT_TESTS
+                    alias: raw_stock_data_symbol_not_null
+                    severity: error
+              - dbt_utils.expression_is_true:
+                  expression: "EXTRACT(year FROM date) IN (2025, 2026)"
+                  config:
+                    store_failures: true
+                    schema: DBT_TESTS
+                    alias: raw_stock_data_date_year_2025_or_2026
+                    severity: error
+          
+          - name: date
+            data_type: date
+            description: Trading date for the row.
+            data_tests:
+              - not_null:
+                  config:
+                    store_failures: true
+                    alias: raw_stock_data_date_not_null
+                    severity: error
+
+          - name: open
+            data_type: double
+            description: Opening price of the stock in US dollars.
+
+          - name: high
+            data_type: double
+            description: Highest trading price of the day for the stock in US dollars.
+
+          - name: low
+            data_type: double
+            description: Lowest trading price of the day for the stock in US dollars.
+
+          - name: close
+            data_type: double
+            description: Closing price of the stock in US dollars.
+
+          - name: volume
+            data_type: bigint
+            description: Number of stocks traded during the day.
+
+          - name: adj_open
+            data_type: double
+            description: Adjusted opening price of the stock in US dollars.
+
+          - name: adj_high
+            data_type: double
+            description: Adjusted highest price of the stock in US dollars.
+
+          - name: adj_low
+            data_type: double
+            description: Adjusted lowest price of the stock in US dollars.
+
+          - name: adj_close
+            data_type: double
+            description: Adjusted closing price of the stock in US dollars.
+
+          - name: adj_volume
+            data_type: bigint
+            description: Adjusted number of stocks traded during the day.
+
+          - name: split_factor
+            data_type: double
+            description: Indicates if the stock was split into multiple shares during the trading day.
+
+          - name: dividend
+            data_type: double
+            description: Dividend distributed on the trading day.
+
+          - name: name
+            data_type: varchar
+            description: Company name.
+
+          - name: exchange
+            data_type: varchar
+            description: Stock exchange name. Where the stock is traded.
+
+          - name: exchange_code
+            data_type: varchar
+            description: Stock exchange code.
+
+          - name: asset_type
+            data_type: varchar
+            description: Financial instrument type.
+
+          - name: price_currency
+            data_type: varchar
+            description: Currency of the quoted prices.
+            data_tests:
+              - accepted_values:
+                  values: ['USD', 'EUR', 'KRW']
+                  config:
+                    store_failures: true
+                    alias: raw_stock_data_price_currency_accepted_values
+                    severity: warn
+
+      - name: raw_statement_data
+        description: Metadata extracted from the Interactive Brokers account statement.
+
+        columns:
+          - name: BrokerName
+            data_type: varchar
+            description: Name of the broker that issued the account statement.
+
+          - name: BrokerAddress
+            data_type: varchar
+            description: Address of the broker issuing the account statement.
+
+          - name: Title
+            data_type: varchar
+            description: Title of the document.
+
+          - name: Period
+            data_type: varchar
+            description: Reporting period covered by the account statement.
+
+          - name: WhenGenerated
+            data_type: timestamp
+            description: Timestamp indicating when the account statement was generated.
+
+      - name: raw_open_positions_data
+        description: Current portfolio positions extracted from the Interactive Brokers account statement.
+
+        columns:
+          - name: DataDiscriminator
+            data_type: varchar
+            description: >
+              Record type used to distinguish summary or detail rows. 
+              Always equal to "Summary".
+
+          - name: Catégorie d'actifs
+            data_type: varchar
+            description: >
+              Asset class of the financial instrument (e.g. Stocks, ETFs, Options).
+              Always equal to "Actions".
+
+          - name: Devise
+            data_type: varchar
+            description: Currency in which the position is denominated.
+
+          - name: Symbole
+            data_type: varchar
+            description: Ticker symbol identifying the financial instrument.
+            data_tests:
+              - not_null:
+                  config:
+                    store_failures: true
+                    alias: raw_open_positions_data_symbol_not_null
+                    severity: error
+
+          - name: Quantité
+            data_type: bigint
+            description: Number of units currently held.
+
+          - name: Mult
+            data_type: integer
+            description: >
+              Contract multiplier applied to the position. 
+              Always equal to 1 for stocks.
+
+          - name: Coût
+            data_type: double
+            description: Average acquisition cost per unit.
+
+          - name: Coût d'acquisition
+            data_type: double
+            description: >
+              Total acquisition cost of the position.
+              Equal to the product of "Quantité" and "Coût".
+
+          - name: Cours de clôture
+            data_type: double
+            description: Most recent closing market price of the financial instrument.
+
+          - name: Valeur
+            data_type: double
+            description: Current market value of the position.
+
+          - name: P/L non réalisé
+            data_type: double
+            description: Unrealized profit or loss of the position.
+
+          - name: Code
+            data_type: varchar
+            description: Optional position or instrument code provided by Interactive Brokers.
+
+      - name: raw_performance_data
+        description: Realized and unrealized profit and loss by asset category and financial instrument, extracted from the Interactive Brokers account statement.
+
+        columns:
+          - name: Catégorie d'actifs
+            data_type: varchar
+            description: Asset class of the financial instrument.
+
+          - name: Symbole
+            data_type: varchar
+            description: Ticker symbol identifying the financial instrument.
+            data_tests:
+              - not_null:
+                  config:
+                    store_failures: true
+                    alias: raw_performance_data_symbol_not_null
+                    severity: error
+
+          - name: Aj. coût
+            data_type: double
+            description: >
+              Cost adjustment applied to the instrument.
+              Is equal to 0 as there is no cost adjustment for stocks.
+
+          - name: Realisé Profit C/T
+            data_type: double
+            description: Realized short-term profit for the instrument.
+
+          - name: Realisé Perte C/T
+            data_type: double
+            description: Realized short-term loss for the instrument.
+
+          - name: Realisé Profit L/T
+            data_type: double
+            description: Realized long-term profit for the instrument.
+
+          - name: Realisé Perte L/T
+            data_type: double
+            description: Realized long-term loss for the instrument.
+
+          - name: Realisé Total
+            data_type: double
+            description: Total realized profit or loss for the instrument.
+
+          - name: Non réalisé Profit C/T
+            data_type: double
+            description: Unrealized short-term profit for the instrument.
+
+          - name: Non réalisé Perte C/T
+            data_type: double
+            description: Unrealized short-term loss for the instrument.
+
+          - name: Non réalisé Profit L/T
+            data_type: double
+            description: Unrealized long-term profit for the instrument.
+
+          - name: Non réalisé Perte L/T
+            data_type: double
+            description: Unrealized long-term loss for the instrument.
+
+          - name: Non réalisé Total
+            data_type: double
+            description: Total unrealized profit or loss for the instrument.
+
+          - name: Total
+            data_type: double
+            description: Total profit or loss, combining realized and unrealized amounts.
+
+          - name: Code
+            data_type: varchar
+            description: Optional instrument code provided by Interactive Brokers.

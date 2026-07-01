@@ -1,0 +1,103 @@
+# -----------------------------
+# 📦 PYTHON ENVIRONMENTS
+# -----------------------------
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# -----------------------------
+# ⚙️ CONFIG / ENVIRONMENT FILES
+# -----------------------------
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Credentials and API keys
+*.key
+*.pem
+*.json
+credentials/
+secrets/
+api_keys/
+*token*.txt
+*secret*.txt
+*password*.txt
+
+# -----------------------------
+# 🧠 DATA & CACHE
+# -----------------------------
+# Local data exports
+data/
+datasets/
+raw_data/
+temp/
+tmp/
+*.parquet
+*.csv
+*.xlsx
+*.json
+*.db
+
+# Model or intermediate artifacts
+*.pkl
+*.joblib
+*.h5
+
+# Cache
+.cache/
+.ipynb_checkpoints/
+__pycache__/
+.DS_Store
+
+# -----------------------------
+# 📊 NOTEBOOKS / REPORTS
+# -----------------------------
+# Auto-saves or checkpoints
+notebooks/
+notebooks/.ipynb_checkpoints/
+*.nbconvert.ipynb
+
+# Generated HTML reports
+reports/
+*.html
+
+# -----------------------------
+# 🧰 TOOLING
+# -----------------------------
+# Logs
+*.log
+logs/
+
+# VSCode / IDE
+.vscode/
+.idea/
+*.code-workspace
+
+# Jupyter / Deepnote metadata
+.jupyter/
+.deepnote/
+
+# -----------------------------
+# 🧩 DBT / PROJECT-SPECIFIC
+# -----------------------------
+# Compiled & target folders
+target/
+dbt_packages/
+
+# Profiles (local credentials)
+profiles.yml
+*.profiles.yml
+
+# -----------------------------
+# 🧪 TESTS
+# -----------------------------
+.pytest_cache/
+.coverage
+htmlcov/
