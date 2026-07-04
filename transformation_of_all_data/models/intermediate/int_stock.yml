@@ -12,7 +12,7 @@ models:
       1. Exclude all adjusted prices as they seem inconsistent sometimes (e.g. adj_open = 785 and adj_close = 156 for NOW)
       2. Exclude volume as it is not relevant for our analysis
       3. Exclude dividend as we don't need to want to track the dividend history of a stock
-      4. Exclude split_factor as we don't need to track the split history of a
+      4. Exclude split_factor as we don't need to track the split history of a stock
 
     columns:
       - name: date
@@ -20,6 +20,16 @@ models:
 
       - name: symbol
         description: Stock ticker symbol.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('symbol_to_companies')
+                field: symbol
+              config:
+                severity: warn
+                store_failures: true
+                schema: DBT_TESTS
+                alias: int_stock_symbol_relationships
 
       - name: company_name
         description: Company name.
