@@ -24,4 +24,4 @@ SELECT
         "P/L non réalisé" AS unrealized_profit_or_loss_for_all_units_of_the_asset,
         Code AS asset_code
 FROM 
-        {{ source('raw_data', 'raw_open_positions_data') }}
+        {{ source('raw', 'raw_open_positions_data') }}

@@ -7,6 +7,16 @@ sources:
       - name: raw_stock_data
         description: Daily stock prices and trading information.
 
+        data_tests:
+          - dbt_utils.expression_is_true:
+              arguments:
+                expression: "EXTRACT(year FROM date) IN (2025, 2026)"
+              config:
+                store_failures: true
+                schema: DBT_TESTS
+                alias: raw_stock_data_date_year_2025_or_2026
+                severity: error
+
         columns:
           - name: symbol
             data_type: varchar
@@ -17,13 +27,6 @@ sources:
                     store_failures: true
                     schema: DBT_TESTS
                     alias: raw_stock_data_symbol_not_null
-                    severity: error
-              - dbt_utils.expression_is_true:
-                  expression: "EXTRACT(year FROM date) IN (2025, 2026)"
-                  config:
-                    store_failures: true
-                    schema: DBT_TESTS
-                    alias: raw_stock_data_date_year_2025_or_2026
                     severity: error
           
           - name: date
@@ -105,7 +108,8 @@ sources:
             description: Currency of the quoted prices.
             data_tests:
               - accepted_values:
-                  values: ['USD', 'EUR', 'KRW']
+                  arguments:
+                    values: ['USD', 'EUR', 'KRW']
                   config:
                     store_failures: true
                     alias: raw_stock_data_price_currency_accepted_values

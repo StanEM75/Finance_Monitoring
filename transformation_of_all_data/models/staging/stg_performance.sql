@@ -27,4 +27,4 @@ SELECT
         "Total" AS total_profit_or_loss_for_sale_of_the_asset,
         "Code" AS asset_code
 FROM 
-        {{ source('raw_data', 'raw_performance_data') }}
+        {{ source('raw', 'raw_performance_data') }}
