@@ -198,7 +198,7 @@ sources:
             description: Unrealized profit or loss of the position.
 
           - name: Code
-            data_type: varchar
+            data_type: double
             description: Optional position or instrument code provided by Interactive Brokers.
 
       - name: raw_performance_data

@@ -1,0 +1,58 @@
+version: 2
+
+models:
+  - name: stg_performance
+    description: Standardizes realized and unrealized profit and loss data extracted from the Interactive Brokers statement.
+
+    columns:
+      - name: asset_category
+        description: Asset class of the financial instrument.
+
+      - name: asset_symbol
+        description: Stock ticker symbol.
+        data_tests:
+          - not_null:
+              config:
+                store_failures: true
+                schema: DBT_TESTS
+                alias: stg_performance_asset_symbol_not_null
+                severity: error
+
+      - name: adjusted_cost_of_the_asset
+        description: Cost adjustment applied to the asset.
+
+      - name: realized_short_term_profit_for_sale_of_the_asset
+        description: Realized short-term profit.
+
+      - name: realized_loss_for_sale_of_the_asset
+        description: Realized short-term loss.
+
+      - name: realized_long_term_profit_for_sale_of_the_asset
+        description: Realized long-term profit.
+
+      - name: realized_long_term_loss_for_sale_of_the_asset
+        description: Realized long-term loss.
+
+      - name: total_realized_profit_or_loss_for_sale_of_the_asset
+        description: Total realized profit or loss.
+
+      - name: unrealized_short_term_profit_for_sale_of_the_asset
+        description: Unrealized short-term profit.
+
+      - name: unrealized_short_term_loss_for_sale_of_the_asset
+        description: Unrealized short-term loss.
+
+      - name: unrealized_long_term_profit_for_sale_of_the_asset
+        description: Unrealized long-term profit.
+
+      - name: unrealized_long_term_loss_for_sale_of_the_asset
+        description: Unrealized long-term loss.
+
+      - name: total_unrealized_profit_or_loss_for_sale_of_the_asset
+        description: Total unrealized profit or loss.
+
+      - name: total_profit_or_loss_for_sale_of_the_asset
+        description: Total profit or loss (realized + unrealized).
+
+      - name: asset_code
+        description: Optional instrument code.

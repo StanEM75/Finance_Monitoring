@@ -1,0 +1,42 @@
+version: 2
+
+models:
+  - name: stg_open_positions
+    description: Standardizes the current portfolio positions extracted from the Interactive Brokers statement.
+
+    columns:
+      - name: data_discriminator
+        description: Record type identifying the imported row.
+
+      - name: asset_category
+        description: Asset class of the financial instrument.
+
+      - name: currency_used_for_purchasing_the_asset
+        description: Currency in which the asset is denominated.
+
+      - name: asset_symbol
+        description: Stock ticker symbol.
+
+      - name: quantity_of_assets_held
+        description: Number of units currently held.
+
+      - name: multiplier
+        description: Contract multiplier.
+
+      - name: avg_cost_of_an_unit_of_the_asset
+        description: Average acquisition cost per unit.
+
+      - name: total_cost_for_all_units_of_the_asset
+        description: Total acquisition cost of the position.
+
+      - name: latest_closing_price_of_the_asset
+        description: Latest available closing price.
+
+      - name: market_value_for_all_units_of_the_asset
+        description: Current market value of the position.
+
+      - name: unrealized_profit_or_loss_for_all_units_of_the_asset
+        description: Unrealized profit or loss for the position.
+
+      - name: asset_code
+        description: Optional instrument code.

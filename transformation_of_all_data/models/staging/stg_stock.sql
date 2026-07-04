@@ -6,6 +6,10 @@
     )
 }}
 
+--================================================================================================================
+-- Import data from the raw_stock_data table to keep only the stocks prices later on
+-- ===============================================================================================================
+
 SELECT 
         date,
         symbol,
@@ -27,5 +31,4 @@ SELECT
         exchange AS stock_exchange_name,
         exchange_code AS stock_exchange_code
 FROM 
-        {{ source('raw', 'raw_stock_data') }}
-        
+        {{ source('raw', 'raw_stock_data') }}  
