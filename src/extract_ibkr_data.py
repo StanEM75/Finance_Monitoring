@@ -123,17 +123,17 @@ open_positions = tables["Positions ouvertes"]
 # ================================================================================
 
 # A table to extract the date of generation of the report
-statement.to_csv("../data/df_statement.csv", index=False)
+statement.to_csv("/Users/stanislas/Projets/Business/financial-api/data/df_statement.csv", index=False)
 
 logging.info(f"Statement table exported successfully. Contains {len(statement)} rows and {len(statement.columns)} columns.")
 
 # A table to extract the performance summary for open and closed positions, including realized and unrealized P&L
-performance.to_csv("../data/df_performance.csv", index=False)
+performance.to_csv("/Users/stanislas/Projets/Business/financial-api/data/df_performance.csv", index=False)
 
 logging.info(f"Performance table exported successfully. Contains {len(performance)} rows and {len(performance.columns)} columns.")
 
 # A table with open positions, including details such as symbol, quantity, average price, market value, and unrealized P&L
-open_positions.to_csv("../data/df_open_positions.csv", index=False)
+open_positions.to_csv("/Users/stanislas/Projets/Business/financial-api/data/df_open_positions.csv", index=False)
 
 logging.info(f"Open positions table exported successfully. Contains {len(open_positions)} rows and {len(open_positions.columns)} columns.")
 
