@@ -2,7 +2,7 @@
     config(
         materialized='view',
         schema='STG_FINANCIAL_DATA',
-        tags=['staging', 'stock_data'],
+        tags=['staging', 'positions_data'],
     )
 }}
 
@@ -19,7 +19,7 @@ SELECT
         Mult AS multiplier,
         "Coût" AS avg_cost_of_an_unit_of_the_asset,
         "Coût d'acquisition" AS total_cost_for_all_units_of_the_asset,
-        "Cours de clôture" AS latest_closing_price_of_the_asset,
+        "Cours de clôture" AS latest_closing_price_of_an_unit_of_the_asset,
         "Valeur" AS market_value_for_all_units_of_the_asset,
         "P/L non réalisé" AS unrealized_profit_or_loss_for_all_units_of_the_asset,
         Code AS asset_code

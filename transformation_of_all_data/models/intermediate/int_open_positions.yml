@@ -1,0 +1,47 @@
+version: 2
+
+models:
+  - name: stg_open_positions
+    description: >
+      Standardizes and enriches the current portfolio positions extracted from the
+      Interactive Brokers statement. Asset categories are translated from French
+      to English (e.g. Actions → STOCKS, Fonds → FUNDS) to ensure consistency
+      across the data model.
+
+    columns:
+      - name: asset_category
+        description: >
+          Asset class of the financial instrument translated to English for
+          standardization purposes. Values such as 'Actions', 'Fonds',
+          'Obligations', and 'Options' are mapped to 'STOCKS', 'FUNDS',
+          'BONDS', and 'OPTIONS' respectively.
+
+      - name: currency_used_for_purchasing_the_asset
+        description: Currency in which the asset is denominated and purchased.
+
+      - name: asset_symbol
+        description: Ticker symbol identifying the financial instrument.
+        data_tests:
+          - not_null:
+              config:
+                store_failures: true
+                alias: stg_open_positions_asset_symbol_not_null
+                severity: error
+
+      - name: quantity_of_assets_held
+        description: Number of units currently held in the portfolio.
+
+      - name: avg_cost_of_an_unit_of_the_asset
+        description: Average acquisition cost per unit of the financial instrument.
+
+      - name: latest_closing_price_of_an_unit_of_the_asset
+        description: Latest available closing price per unit of the financial instrument.
+
+      - name: total_cost_for_all_units_of_the_asset
+        description: Total acquisition cost of the position.
+
+      - name: market_value_for_all_units_of_the_asset
+        description: Current market value of all units held in the position.
+
+      - name: unrealized_profit_or_loss_for_all_units_of_the_asset
+        description: Unrealized profit or loss of the position based on the latest market price.
