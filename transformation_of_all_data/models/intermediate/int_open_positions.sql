@@ -32,4 +32,4 @@ SELECT
         market_value_for_all_units_of_the_asset,
         unrealized_profit_or_loss_for_all_units_of_the_asset
 FROM 
-        {{ ref('int_open_positions') }}
+        {{ ref('stg_open_positions') }}

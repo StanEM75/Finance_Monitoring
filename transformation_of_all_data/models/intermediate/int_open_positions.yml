@@ -1,7 +1,7 @@
 version: 2
 
 models:
-  - name: stg_open_positions
+  - name: int_open_positions
     description: >
 
       Standardizes and enriches the current portfolio positions extracted from the
