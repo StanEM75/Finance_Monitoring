@@ -8,10 +8,9 @@
 
 --================================================================================================================
 -- Select only the relevant columns: 
--- 1. Exclude all adjusted prices as they seem inconsistent sometimes (e.g. adj_open = 785 and adj_close = 156 for NOW)
--- 2. Exclude volume as it is not relevant for our analysis
--- 3. Exclude dividend as we don't need to want to track the dividend history of a stock
--- 4. Exclude split_factor as we don't need to track the split history of a
+-- 1. Exclude data_discriminator that is always equal to 'Summary'
+-- 2. Exclude multiplier because we don't need to track the split history of a stock
+-- 3. Exclude asset_code that is always null
 -- ===============================================================================================================
 
 SELECT 

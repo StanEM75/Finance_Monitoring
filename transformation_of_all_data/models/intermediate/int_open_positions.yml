@@ -3,10 +3,17 @@ version: 2
 models:
   - name: stg_open_positions
     description: >
+
       Standardizes and enriches the current portfolio positions extracted from the
-      Interactive Brokers statement. Asset categories are translated from French
-      to English (e.g. Actions → STOCKS, Fonds → FUNDS) to ensure consistency
-      across the data model.
+      Interactive Brokers statement. 
+      
+      Asset categories are translated from French to English (e.g. Actions → STOCKS, Fonds → FUNDS) 
+      to ensure consistency across the data model.
+
+      Select only the relevant columns for downstream analysis:
+      - Exclude `data_discriminator`, as it is always equal to `'Summary'`.
+      - Exclude `multiplier`, since stock split history is not tracked in this project.
+      - Exclude `asset_code`, as it is always `NULL`.
 
     columns:
       - name: asset_category
