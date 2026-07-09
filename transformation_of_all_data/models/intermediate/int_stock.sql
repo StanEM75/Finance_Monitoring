@@ -2,7 +2,7 @@
     config(
         materialized='view',
         schema='INT_FINANCIAL_DATA',
-        tags=['staging', 'stock_data'],
+        tags=['intermediate', 'stock_data'],
     )
 }}
 
