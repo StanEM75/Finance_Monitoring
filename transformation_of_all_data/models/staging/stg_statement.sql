@@ -16,5 +16,5 @@ SELECT
         Title AS document_title,
         Period AS period_covered,
         WhenGenerated AS document_generation_timestamp
-FROM 
+FROM
         {{ source('raw', 'raw_statement_data') }}

@@ -1,0 +1,21 @@
+version: 2
+
+models:
+  - name: int_statement
+    description: >
+      Provides a simplified view of the Interactive Brokers account statement metadata
+      by retaining only the information required for downstream processing.
+
+      This model only keeps `document_generation_timestamp`, which is used to track
+      when the source statement was generated and to support DAG orchestration and
+      data freshness monitoring.
+
+      Select only the relevant columns for downstream analysis:
+      - Exclude `broker_name`, `broker_address`, `document_title`, and `period_covered`, as they are not required by downstream models.
+      - Keep only `document_generation_timestamp`, as it is the only metadata field needed for the project.
+
+    columns:
+      - name: document_generation_timestamp
+        description: >
+          Timestamp when the Interactive Brokers statement was generated.
+          Will be used for DAG orchestration and data freshness monitoring in downstream processes.
