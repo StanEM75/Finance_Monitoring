@@ -2,16 +2,9 @@
     config(
         materialized='view',
         schema='INT_FINANCIAL_DATA',
-        tags=['staging', 'positions_data'],
+        tags=['intermediate', 'positions_data'],
     )
 }}
-
---================================================================================================================
--- Select only the relevant columns: 
--- 1. Exclude data_discriminator that is always equal to 'Summary'
--- 2. Exclude multiplier because we don't need to track the split history of a stock
--- 3. Exclude asset_code that is always null
--- ===============================================================================================================
 
 SELECT 
         CASE 
