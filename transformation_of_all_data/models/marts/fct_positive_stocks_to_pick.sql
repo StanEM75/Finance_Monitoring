@@ -3,7 +3,18 @@
         materialized='table',
         schema='DTM_FINANCIAL_DATA',
         tags=['datamart', 'stock_data'],
-    )
+        post_hook=[
+                        "COPY (
+                                SELECT * FROM {{ this }}
+                        ) TO '/Users/stanislas/Projets/Business/financial-api/data/stocks_to_pick.csv'
+                        (
+                                FORMAT CSV,
+                                HEADER TRUE,
+                                DELIMITER ',',
+                                USE_TMP_FILE TRUE
+                        )"
+                  ]
+          )
 }}
 
 WITH positive_positions AS (
@@ -16,7 +27,8 @@ WITH positive_positions AS (
 )
 
 SELECT
-        fct_stock_prices.symbol
+        DISTINCT
+                fct_stock_prices.symbol
 FROM 
         {{ ref('fct_stock_prices') }} fct_stock_prices
 INNER JOIN
