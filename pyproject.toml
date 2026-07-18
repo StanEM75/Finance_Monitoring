@@ -1,7 +1,6 @@
 [project]
 name = "financial-api"
 version = "0.1.0"
-description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
@@ -21,3 +20,24 @@ dependencies = [
     "requests>=2.32.5",
     "seaborn>=0.13.2",
 ]
+
+[tool.ruff]
+# Target Python 3.12 (aligned with requires-python).
+target-version = "py312"
+line-length = 88
+# Ruff already respects .gitignore; also exclude generated artifacts.
+extend-exclude = [
+    "airflow_orchestration/.astro",
+    "transformation_of_all_data/dbt_packages",
+    "transformation_of_all_data/target",
+]
+
+[tool.ruff.lint]
+# E/W: pycodestyle, F: pyflakes, I: isort (import sorting),
+# UP: pyupgrade, B: bugbear, SIM: simplifications.
+select = ["E", "W", "F", "I", "UP", "B", "SIM"]
+
+[tool.ruff.format]
+# Black-style formatting (Ruff default, made explicit here).
+quote-style = "double"
+indent-style = "space"

@@ -1,0 +1,24 @@
+# sqlfluff configuration for the dbt project.
+# Uses the dbt templater so Jinja ({{ config() }}, {{ source() }}, ref(), ...)
+# is compiled before linting. This requires dbt + a profile (see CI / ~/.dbt).
+[sqlfluff]
+dialect = duckdb
+templater = dbt
+# Keep the first run manageable; tighten by removing rules from this list.
+exclude_rules = layout.long_lines
+
+[sqlfluff:templater:dbt]
+project_dir = transformation_of_all_data
+# profiles_dir / target are left to dbt defaults (~/.dbt, profile's default
+# target) so the same config works locally and in CI.
+
+[sqlfluff:indentation]
+tab_space_size = 4
+indent_unit = space
+
+# Match the existing SQL style (SELECT / AS / FROM in uppercase).
+[sqlfluff:rules:capitalisation.keywords]
+capitalisation_policy = upper
+
+[sqlfluff:rules:capitalisation.identifiers]
+extended_capitalisation_policy = consistent

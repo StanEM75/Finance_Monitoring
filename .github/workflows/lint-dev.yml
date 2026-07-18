@@ -1,0 +1,91 @@
+# ==============================================================================
+# Lint (dev)
+#
+# Runs all linters on the `dev` branch only (never on `main`).
+# Three independent, parallel jobs:
+#   - ruff     : Python lint + format check   (config: [tool.ruff] in pyproject.toml)
+#   - yamllint : YAML trailing whitespace, indentation, empty lines, ...  (.yamllint)
+#   - sqlfluff : dbt SQL lint via the dbt templater                       (.sqlfluff)
+# Configs are shared with pre-commit and local runs, so every context uses
+# the exact same rules.
+# ==============================================================================
+name: Lint (dev)
+
+# Dev only: triggers exclusively on the dev branch, never on main.
+on:
+  push:
+    branches: [dev]
+
+permissions:
+  contents: read
+
+jobs:
+  # --- Python: lint + format check -------------------------------------------
+  ruff:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Ruff lint
+        uses: astral-sh/ruff-action@v3
+        with:
+          args: "check ."
+
+      - name: Ruff format check
+        uses: astral-sh/ruff-action@v3
+        with:
+          args: "format --check ."
+
+  # --- YAML: whitespace / indentation ----------------------------------------
+  yamllint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install yamllint
+        run: pip install yamllint
+
+      - name: Run yamllint
+        run: yamllint .
+
+  # --- SQL (dbt): lint via the dbt templater ---------------------------------
+  sqlfluff:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: transformation_of_all_data
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install sqlfluff + dbt
+        run: pip install sqlfluff sqlfluff-templater-dbt dbt-duckdb
+
+      # sqlfluff's dbt templater compiles Jinja, so it needs a profile.
+      # DuckDB is embedded -> an ephemeral profile with no secrets is enough.
+      - name: Write ephemeral dbt profile
+        run: |
+          mkdir -p ~/.dbt
+          cat > ~/.dbt/profiles.yml <<'EOF'
+          transformation_of_all_data:
+            target: ci
+            outputs:
+              ci:
+                type: duckdb
+                path: /tmp/ci.duckdb
+                threads: 1
+          EOF
+
+      - name: dbt deps
+        run: dbt deps
+
+      - name: Run sqlfluff
+        working-directory: ${{ github.workspace }}
+        run: sqlfluff lint transformation_of_all_data/models

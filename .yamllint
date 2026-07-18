@@ -1,0 +1,24 @@
+# yamllint configuration.
+# Catches trailing whitespace, bad indentation, empty lines, duplicate keys, ...
+extends: default
+
+ignore: |
+  transformation_of_all_data/target/
+  transformation_of_all_data/dbt_packages/
+  airflow_orchestration/.astro/
+  **/package-lock.yml
+
+rules:
+  # Long lines are common and harmless in YAML config; don't fail on them.
+  line-length: disable
+  # Do not require a leading "---" document marker.
+  document-start: disable
+  # Allow "on:", "yes"/"no" etc. without quoting (GitHub Actions keys).
+  truthy:
+    check-keys: false
+  # The important ones, kept as errors:
+  trailing-spaces: enable
+  indentation:
+    spaces: 2
+    indent-sequences: true
+  new-line-at-end-of-file: enable
