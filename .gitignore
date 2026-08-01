@@ -1,0 +1,135 @@
+# -----------------------------
+# PYTHON ENVIRONMENTS
+# -----------------------------
+.venv/
+.venv_*/
+venv/
+env/
+ENV/
+runtime_venv/
+.python-version
+
+# Python bytecode and build artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Dependency lock file (kept local for this project)
+uv.lock
+
+# -----------------------------
+# CONFIGURATION AND SECRETS
+# -----------------------------
+.env
+.env.*
+!.env.example
+
+*.key
+*.pem
+credentials/
+secret/
+secrets/
+api_keys/
+*token*.txt
+*secret*.txt
+*password*.txt
+
+# -----------------------------
+# DATA, DATABASES, AND ARTIFACTS
+# -----------------------------
+data/
+datasets/
+raw_data/
+warehouse/
+temp/
+tmp/
+
+*.csv
+*.xlsx
+*.parquet
+*.db
+*.duckdb
+*.pkl
+*.joblib
+*.h5
+
+# -----------------------------
+# NOTEBOOKS AND REPORTS
+# -----------------------------
+notebooks/
+.ipynb_checkpoints/
+*.nbconvert.ipynb
+reports/
+*.html
+
+# -----------------------------
+# CACHE, TESTS, AND COVERAGE
+# -----------------------------
+.cache/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# -----------------------------
+# LOGS AND LOCAL RUNTIME FILES
+# -----------------------------
+*.log
+logs/
+*/logs/
+*.pid
+*.out
+*.err
+
+# -----------------------------
+# EDITORS AND OPERATING SYSTEMS
+# -----------------------------
+.DS_Store
+.vscode/
+.idea/
+*.code-workspace
+.jupyter/
+.deepnote/
+
+# -----------------------------
+# DBT
+# -----------------------------
+target/
+dbt_packages/
+profiles.yml
+*.profiles.yml
+
+# -----------------------------
+# ASTRONOMER AND AIRFLOW
+# -----------------------------
+.astro/
+airflow_logs/
+airflow*/logs/
+airflow/tmp/
+airflow/xcom/
+airflow/dags/__pycache__/
+
+airflow.db
+airflow.db-journal
+celerybeat-schedule
+
+.astro/runtime/
+plugins/__pycache__/
+plugins/.ipynb_checkpoints/
+dag_bag/
+.dag-bag/
+.dag_bundles/
+
+# -----------------------------
+# LOCAL DOCKER OVERRIDES
+# -----------------------------
+docker-compose.override.yml
+docker-compose*.log
+**/Dockerfile~
+docker-compose.yml~
