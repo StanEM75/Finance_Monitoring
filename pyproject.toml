@@ -19,6 +19,7 @@ dependencies = [
     "pre-commit>=4.3.0",
     "requests>=2.32.5",
     "seaborn>=0.13.2",
+    "streamlit>=1.59,<2",
 ]
 
 [tool.ruff]
