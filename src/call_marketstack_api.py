@@ -7,6 +7,8 @@ import os # For environment variables
 from dotenv import load_dotenv # To load .env file
 import pandas as pd # For data manipulation and converting JSON to DataFrame
 
+today = pd.Timestamp.now(tz="UTC")
+
 # ================================================================================
 #                            GET CREDENTIALS AND API URL
 # ================================================================================
@@ -25,16 +27,18 @@ api_key = os.getenv("API_KEY")
 # ================================================================================
 
 # Retrieve the current positions in the portfolio (only current positions are interesting to get data for)
-df = pd.read_csv('../data/df_open_positions.csv')
+df1 = pd.read_csv('../data/outputs/stocks_to_pick.csv')
 
-# Korean stocks will be monitored later in the future
-df = df.query('Devise != "KRW"')
+# Rename the column 'asset_symbol' to 'symbol' to merge on a common column with the second dataframe later on
+df1 = df1.rename(columns={'asset_symbol': 'symbol'})
 
-# Sort by the 20 highest unrealized profit/loss as we will only select them (limit 100/month for free plan)
-df.sort_values(by='P/L non réalisé', ascending=False, inplace=True)
+# Retrieve the list of symbols not owned today but that could be interesting in the future
+df2 = pd.read_csv('../data/outputs/stocks_to_monitor.csv')
+
+df = pd.concat([df1, df2], ignore_index=True)
 
 # Create a list of symbols, representing the list of stocks we want to get data for
-symbols = df['Symbole'].unique().tolist()
+symbols = df['symbol'].unique().tolist()
 
 # ================================================================================
 #                                API CALL PARAMETERS 
@@ -48,6 +52,10 @@ params = {
     "symbols": ",".join(symbols),
     # Limit the number of records returned to 10000 (The limit)
     "limit": 10000,
+    "date_from": (
+        today - pd.DateOffset(months=12)
+    ).date().isoformat(),
+    "date_to": today.date().isoformat(),
 }
 
 # ================================================================================
@@ -58,29 +66,60 @@ params = {
 def get_stock_data(url, params):
     try:
         # Get a response from the API
-        response = requests.get(url, params=params, timeout=10)
+        response = requests.get(
+            url,
+            params=params,
+            timeout=(10, 120),
+        )
         # Raise the status of the call: success or error
         response.raise_for_status()
-        # Get the result of the call through JSON format
-        return response.json()
     # Handle request exceptions
-    except requests.exceptions.RequestException as e:
-        print(f"Erreur lors de l'appel API : {e}")
-        return None
+    except requests.exceptions.ConnectTimeout as error:
+        raise RuntimeError(
+            "Impossible de se connecter à Marketstack en 10 secondes."
+        ) from error
+    except requests.exceptions.ReadTimeout as error:
+        raise RuntimeError(
+            "Marketstack n'a pas répondu dans les 120 secondes."
+        ) from error
+    except requests.exceptions.RequestException as error:
+        raise RuntimeError(
+            f"Erreur lors de l'appel Marketstack : {error}"
+        ) from error
+
+    # Get the result of the call through JSON format
+    payload = response.json()
+
+    if "error" in payload:
+        raise RuntimeError(
+            f"Erreur renvoyée par Marketstack : {payload['error']}"
+        )
+
+    if "data" not in payload:
+        raise ValueError(
+            "La réponse Marketstack ne contient pas de champ 'data'."
+        )
+
+    return payload
 
 # Call the function to call the API and get stock data required
 data = get_stock_data(url, params)
 
 # Convert the 'data' part of the JSON response to a Pandas DataFrame and print the data
-if data and "data" in data:
-    # Extract the data from the JSON response and convert it to a Pandas DataFrame
-    df = pd.DataFrame(data["data"])
-    # Convert the 'date' column to datetime format
-    df["date"] = pd.to_datetime(df["date"], format="%Y-%m-%dT%H:%M:%S%z")
-    # Print the shape of the DataFrame to be sure we have enougn data
-    print(df.shape)
-    # Export the dataframe to a CSV file for further analysis
-    df.to_csv("../data/stock_data.csv", index=False)
+df = pd.DataFrame(data["data"])
 
-else:
-    print("Aucune donnée renvoyée par l'API.")
+if df.empty:
+    raise ValueError("Marketstack n'a renvoyé aucune donnée.")
+
+# Convert the 'date' column to datetime format
+df["date"] = pd.to_datetime(
+    df["date"],
+    errors="coerce",
+    utc=True,
+)
+
+# Print the shape of the DataFrame to be sure we have enougn data
+print(df.shape)
+
+# Export the dataframe to a CSV file for further analysis
+df.to_csv("../data/stock_data.csv", index=False)
