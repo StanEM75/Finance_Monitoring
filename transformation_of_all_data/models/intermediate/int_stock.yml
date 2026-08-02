@@ -3,54 +3,21 @@ version: 2
 models:
   - name: int_stock
     description: >
-      Intermediate model containing only the stock attributes required for
-      portfolio analysis. 
-      Adjusted prices, trading volume, dividend history,
-      and split history are intentionally excluded as they are either not
-      required or considered unreliable for this project.
-      Indeed, following rules have been applied:
-      1. Exclude all adjusted prices as they seem inconsistent sometimes (e.g. adj_open = 785 and adj_close = 156 for NOW)
-      2. Exclude volume as it is not relevant for our analysis
-      3. Exclude dividend as we don't need to want to track the dividend history of a stock
-      4. Exclude split_factor as we don't need to track the split history of a stock
-
+      Retains the ticker, unadjusted OHLC prices, and record date required for
+      price analysis. Adjusted prices, volume, dividends, split history, and
+      descriptive instrument metadata are intentionally excluded.
     columns:
-      - name: date
-        description: Trading date. Contains only the date part, as time is not relevant for our analysis.
-
-      - name: symbol
-        description: Stock ticker symbol.
+      - name: asset_symbol
+        description: Ticker symbol identifying the financial instrument.
         data_tests:
-          - relationships:
-              arguments:
-                to: ref('symbol_to_companies')
-                field: symbol
-              config:
-                severity: warn
-                store_failures: true
-                schema: DBT_TESTS
-                alias: int_stock_symbol_relationships
-
-      - name: company_name
-        description: Company name.
-
-      - name: asset_type
-        description: Financial instrument type.
-
-      - name: price_currency
-        description: Currency in which the stock price is quoted.
-
-      - name: open_price
-        description: Opening price of the trading day.
-
-      - name: close_price
-        description: Closing price of the trading day.
-
-      - name: low_price
-        description: Lowest price reached during the trading day.
-
-      - name: high_price
-        description: Highest price reached during the trading day.
-
-      - name: exchange_code
-        description: Stock exchange code.
+          - not_null
+      - name: asset_open_price
+        description: Opening price of the trading session.
+      - name: asset_close_price
+        description: Closing price of the trading session.
+      - name: asset_low_price
+        description: Lowest price during the trading session.
+      - name: asset_high_price
+        description: Highest price during the trading session.
+      - name: record_date
+        description: Trading date derived from the source market-data timestamp.

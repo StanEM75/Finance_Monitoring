@@ -3,32 +3,17 @@ version: 2
 models:
   - name: int_performance
     description: >
-
-      Aggregates realized and unrealized profit and loss metrics extracted from the
-      Interactive Brokers statement and keeps only the fields required for portfolio
-      performance analysis.
-
-      This model provides a simplified view of asset-level performance by exposing
-      total realized, unrealized, and overall profit and loss figures, without
-      distinguishing between short-term and long-term components.
-
-      Select only the relevant columns for downstream analysis:
-      - Exclude `adjusted_cost_of_the_asset`, as it is always equal to `0` for all assets in the portfolio.
-      - Exclude all short-term and long-term profit and loss columns, as only aggregated profit and loss metrics are required.
-      - Exclude `asset_code`, as it is always `NULL`.
-
+      Retains asset-level realized, unrealized, and combined FIFO profit and
+      loss metrics. Client information, secondary identifiers, trading
+      metadata, transferred profit and loss, and the report date are excluded.
     columns:
-      - name: asset_category
-        description: Asset class of the financial instrument.
-
       - name: asset_symbol
-        description: Stock ticker symbol.
-
-      - name: total_realized_profit_or_loss_for_sale_of_the_asset
-        description: Total realized profit or loss from the sale of the asset.
-
-      - name: total_unrealized_profit_or_loss_for_sale_of_the_asset
-        description: Total unrealized profit or loss for the asset.
-
-      - name: total_profit_or_loss_for_sale_of_the_asset
-        description: Total profit or loss for the asset, including both realized and unrealized amounts.
+        description: Ticker symbol identifying the financial instrument.
+        data_tests:
+          - not_null
+      - name: asset_total_realized_profit_and_loss
+        description: Total realized profit or loss.
+      - name: asset_total_unrealized_profit_and_loss
+        description: Total unrealized profit or loss.
+      - name: asset_total_fifo_method_profit_and_loss
+        description: Combined realized and unrealized FIFO profit or loss.

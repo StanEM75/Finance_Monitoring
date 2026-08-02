@@ -2,41 +2,42 @@ version: 2
 
 models:
   - name: stg_open_positions
-    description: Standardizes the current portfolio positions extracted from the Interactive Brokers statement.
-
+    description: Standardizes current portfolio positions extracted from the IBKR POST section.
     columns:
-      - name: data_discriminator
-        description: Record type identifying the imported row.
-
-      - name: asset_category
-        description: Asset class of the financial instrument.
-
-      - name: currency_used_for_purchasing_the_asset
-        description: Currency in which the asset is denominated.
-
+      - name: client_account_id
+        description: Interactive Brokers client account identifier.
+      - name: asset_contract_id
+        description: IBKR contract identifier.
+      - name: asset_class
+        description: IBKR asset class code.
       - name: asset_symbol
-        description: Stock ticker symbol.
-
-      - name: quantity_of_assets_held
+        description: Ticker symbol identifying the financial instrument.
+        data_tests:
+          - not_null:
+              config:
+                store_failures: true
+                schema: DBT_TESTS
+                alias: stg_open_positions_asset_symbol_not_null
+                severity: error
+      - name: asset_full_name
+        description: Full name of the financial instrument.
+      - name: asset_trading_place
+        description: Exchange on which the instrument is listed.
+      - name: asset_currency_used_for_trading
+        description: Currency in which the position is valued.
+      - name: asset_multiplier
+        description: Contract multiplier applied to the position.
+      - name: asset_quantity_held
         description: Number of units currently held.
-
-      - name: multiplier
-        description: Contract multiplier.
-
-      - name: avg_cost_of_an_unit_of_the_asset
+      - name: asset_current_value_of_one_unit
+        description: Current marked price per unit.
+      - name: asset_current_position_value
+        description: Current market value of the complete position.
+      - name: asset_cost_of_one_unit
         description: Average acquisition cost per unit.
-
-      - name: total_cost_for_all_units_of_the_asset
+      - name: asset_total_cost_of_the_position
         description: Total acquisition cost of the position.
-
-      - name: latest_closing_price_of_the_asset
-        description: Latest available closing price.
-
-      - name: market_value_for_all_units_of_the_asset
-        description: Current market value of the position.
-
-      - name: unrealized_profit_or_loss_for_all_units_of_the_asset
-        description: Unrealized profit or loss for the position.
-
-      - name: asset_code
-        description: Optional instrument code.
+      - name: asset_unrealized_profit_and_loss
+        description: Unrealized profit or loss calculated with FIFO accounting.
+      - name: asset_position_type
+        description: Position direction, such as Long or Short.

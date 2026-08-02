@@ -11,20 +11,30 @@
 -- ===================================================================================================================================================
 
 SELECT 
-        "Catégorie d'actifs" AS asset_category,
-        Symbole AS asset_symbol,
-        "Aj. coût" AS adjusted_cost_of_the_asset,
-        "Realisé Profit C/T" AS realized_short_term_profit_for_sale_of_the_asset,
-        "Realisé Perte C/T" AS realized_loss_for_sale_of_the_asset, 
-        "Realisé Profit L/T" AS realized_long_term_profit_for_sale_of_the_asset,
-        "Realisé Perte L/T" AS realized_long_term_loss_for_sale_of_the_asset,
-        "Realisé Total" AS total_realized_profit_or_loss_for_sale_of_the_asset,
-        "Non réalisé Profit C/T" AS unrealized_short_term_profit_for_sale_of_the_asset,
-        "Non réalisé Perte C/T" AS unrealized_short_term_loss_for_sale_of_the_asset,
-        "Non réalisé Profit L/T" AS unrealized_long_term_profit_for_sale_of_the_asset,
-        "Non réalisé Perte L/T" AS unrealized_long_term_loss_for_sale_of_the_asset,
-        "Non réalisé Total" AS total_unrealized_profit_or_loss_for_sale_of_the_asset,
-        "Total" AS total_profit_or_loss_for_sale_of_the_asset,
-        "Code" AS asset_code
+        -- Client information
+        ClientAccountID AS client_account_id,
+
+        -- Asset identifiers 
+        Conid AS asset_contract_id,
+        ISIN AS asset_international_security_identification_number,
+        AssetClass AS asset_class,
+        Symbol AS asset_symbol,
+        Description AS asset_full_name,
+
+        -- Asset trading information
+        ListingExchange AS asset_trading_place,
+        Multiplier AS asset_multiplier,
+        CostAdjustment AS asset_cost_adjustment,
+
+        -- Asset performance information
+        TotalRealizedPnl AS asset_total_realized_profit_and_loss,
+        TotalUnrealizedPnl AS asset_total_unrealized_profit_and_loss,
+        TotalFifoPnl AS asset_total_fifo_method_profit_and_loss,
+        TransferredPnl AS asset_transferred_profit_and_loss,
+
+        -- Date of the record in the source table
+        ReportDate AS row_record_date
 FROM 
         {{ source('raw', 'raw_performance_data') }}
+WHERE 
+        Symbol IS NOT NULL

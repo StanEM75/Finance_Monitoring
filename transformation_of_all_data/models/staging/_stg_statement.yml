@@ -2,20 +2,20 @@ version: 2
 
 models:
   - name: stg_statement
-    description: Standardizes metadata extracted from the Interactive Brokers account statement.
-
+    description: Standardizes account metadata extracted from the IBKR ACCT section.
     columns:
-      - name: broker_name
-        description: Name of the broker.
-
-      - name: broker_address
-        description: Broker's address.
-
-      - name: document_title
-        description: Title of the account statement.
-
-      - name: period_covered
-        description: Reporting period covered by the statement.
-
-      - name: document_generation_timestamp
-        description: Timestamp when the statement was generated.
+      - name: client_account_id
+        description: Interactive Brokers client account identifier.
+        data_tests:
+          - not_null
+          - unique
+      - name: client_account_alias
+        description: Optional user-defined account alias.
+      - name: client_account_primary_currency
+        description: Primary currency configured for the account.
+      - name: client_account_type
+        description: Interactive Brokers account type.
+      - name: client_account_ib_entity
+        description: Interactive Brokers legal entity servicing the account.
+      - name: client_account_tax_lot_matching_method
+        description: Tax-lot matching method configured for the account.

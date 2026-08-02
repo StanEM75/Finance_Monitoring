@@ -6,7 +6,7 @@
         post_hook=[
                         "COPY (
                                 SELECT * FROM {{ this }}
-                        ) TO '/Users/stanislas/Projets/Business/financial-api/data/stocks_to_pick.csv'
+                        ) TO '/Users/stanislas/Projets/Business/financial-api/data/outputs/stocks_to_pick.csv'
                         (
                                 FORMAT CSV,
                                 HEADER TRUE,
@@ -17,20 +17,13 @@
           )
 }}
 
-WITH positive_positions AS (
-    SELECT 
-            asset_symbol
-    FROM
-            {{ ref('fct_open_positions') }}
-    WHERE
-            unrealized_profit_or_loss_for_all_units_of_the_asset > 0
-)
 
-SELECT
+SELECT 
         DISTINCT
-                fct_stock_prices.symbol
-FROM 
-        {{ ref('fct_stock_prices') }} fct_stock_prices
-INNER JOIN
-        positive_positions
-        ON fct_stock_prices.symbol = positive_positions.asset_symbol
+                asset_symbol
+FROM
+        {{ ref('fct_open_positions') }}
+WHERE
+        asset_unrealized_profit_and_loss > 0
+        AND asset_symbol IS NOT NULL
+

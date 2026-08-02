@@ -3,19 +3,15 @@ version: 2
 models:
   - name: int_statement
     description: >
-      Provides a simplified view of the Interactive Brokers account statement metadata
-      by retaining only the information required for downstream processing.
-
-      This model only keeps `document_generation_timestamp`, which is used to track
-      when the source statement was generated and to support DAG orchestration and
-      data freshness monitoring.
-
-      Select only the relevant columns for downstream analysis:
-      - Exclude `broker_name`, `broker_address`, `document_title`, and `period_covered`, as they are not required by downstream models.
-      - Keep only `document_generation_timestamp`, as it is the only metadata field needed for the project.
-
+      Deprecated model retained temporarily for backward compatibility. The
+      current IBKR ACCT extract contains account configuration metadata but no
+      statement-generation timestamp, so this model should not be used by new
+      downstream transformations.
+    config:
+      meta:
+        deprecated: true
     columns:
       - name: document_generation_timestamp
         description: >
-          Timestamp when the Interactive Brokers statement was generated.
-          Will be used for DAG orchestration and data freshness monitoring in downstream processes.
+          Legacy statement-generation timestamp. This field is not available
+          in the current ACCT source format.

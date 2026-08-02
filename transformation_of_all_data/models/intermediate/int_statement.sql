@@ -3,6 +3,9 @@
         materialized='view',
         schema='INT_FINANCIAL_DATA',
         tags=['staging', 'statement_data'],
+        deprecated=True,
+        enabled=False,
+        description='This model is deprecated and will be removed in the future.',
     )
 }}
 

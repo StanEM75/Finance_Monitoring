@@ -11,17 +11,29 @@
 -- ================================================================================================================
 
 SELECT 
-        DataDiscriminator AS data_discriminator,
-        "Catégorie d'actifs" AS asset_category,
-        Devise AS currency_used_for_purchasing_the_asset,
-        Symbole AS asset_symbol,
-        "Quantité" AS quantity_of_assets_held,
-        Mult AS multiplier,
-        "Coût" AS avg_cost_of_an_unit_of_the_asset,
-        "Coût d'acquisition" AS total_cost_for_all_units_of_the_asset,
-        "Cours de clôture" AS latest_closing_price_of_an_unit_of_the_asset,
-        "Valeur" AS market_value_for_all_units_of_the_asset,
-        "P/L non réalisé" AS unrealized_profit_or_loss_for_all_units_of_the_asset,
-        Code AS asset_code
+        -- Client information
+        ClientAccountID AS client_account_id,
+
+        -- Asset identifiers 
+        Conid AS asset_contract_id,
+        AssetClass AS asset_class,
+        Symbol AS asset_symbol,
+        Description AS asset_full_name,
+
+        -- Asset trading information
+        ListingExchange AS asset_trading_place,
+        CurrencyPrimary AS asset_currency_used_for_trading,
+        Multiplier AS asset_multiplier,
+        Quantity AS asset_quantity_held,
+
+        -- Asset performance information
+        MarkPrice AS asset_current_value_of_one_unit,
+        PositionValue AS asset_current_position_value,
+        CostBasisPrice AS asset_cost_of_one_unit,
+        CostBasisMoney AS asset_total_cost_of_the_position,
+        FifoPnlUnrealized AS asset_unrealized_profit_and_loss,
+
+        -- Date of the record in the source table
+        Side AS asset_position_type
 FROM 
         {{ source('raw', 'raw_open_positions_data') }}

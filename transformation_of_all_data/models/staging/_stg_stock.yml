@@ -2,62 +2,45 @@ version: 2
 
 models:
   - name: stg_stock
-    description: Standardizes raw stock market prices and trading information.
-
+    description: Standardizes raw stock-market prices and instrument metadata.
     columns:
-      - name: date
-        description: Trading date.
-
-      - name: symbol
-        description: Stock ticker symbol.
-
-      - name: company_name
-        description: Company name.
-
       - name: asset_type
-        description: Financial instrument type.
-
-      - name: price_currency
-        description: Currency in which the stock price is quoted.
-
-      - name: open_price
-        description: Opening price of the trading day.
-
-      - name: high_price
-        description: Highest price reached during the trading day.
-
-      - name: low_price
-        description: Lowest price reached during the trading day.
-
-      - name: close_price
-        description: Closing price of the trading day.
-
-      - name: nb_shares_traded_during_the_day
-        description: Number of shares traded during the trading day.
-
-      - name: adjusted_open_price
-        description: Opening price adjusted for corporate actions.
-
-      - name: adjusted_high_price
-        description: Highest price adjusted for corporate actions.
-
-      - name: adjusted_low_price
-        description: Lowest price adjusted for corporate actions.
-
-      - name: adjusted_close_price
-        description: Closing price adjusted for corporate actions.
-
-      - name: adjusted_nb_shares_traded_during_the_day
-        description: Trading volume adjusted for corporate actions.
-
-      - name: dividend_amount
-        description: Dividend paid on the trading day.
-
-      - name: split_factor
-        description: Stock split factor applied on the trading day.
-
-      - name: stock_exchange_name
+        description: Type of financial instrument.
+      - name: asset_symbol
+        description: Ticker symbol identifying the financial instrument.
+        data_tests:
+          - not_null
+      - name: asset_name
+        description: Company or financial instrument name.
+      - name: asset_trading_place_code
+        description: Code identifying the stock exchange.
+      - name: asset_exchange_name
         description: Name of the stock exchange.
-
-      - name: stock_exchange_code
-        description: Stock exchange code.
+      - name: asset_currency_used_for_trading
+        description: Currency in which prices are quoted.
+      - name: asset_open_price
+        description: Opening price of the trading session.
+      - name: asset_high_price
+        description: Highest price during the trading session.
+      - name: asset_low_price
+        description: Lowest price during the trading session.
+      - name: asset_close_price
+        description: Closing price of the trading session.
+      - name: asset_nb_shares_traded_during_the_day
+        description: Number of units traded during the session.
+      - name: asset_adjusted_open_price
+        description: Opening price adjusted for corporate actions.
+      - name: asset_adjusted_high_price
+        description: Highest price adjusted for corporate actions.
+      - name: asset_adjusted_low_price
+        description: Lowest price adjusted for corporate actions.
+      - name: asset_adjusted_close_price
+        description: Closing price adjusted for corporate actions.
+      - name: asset_adjusted_nb_shares_traded_during_the_day
+        description: Trading volume adjusted for corporate actions.
+      - name: asset_dividend_amount
+        description: Dividend amount associated with the session.
+      - name: asset_split_factor
+        description: Stock split factor applied during the session.
+      - name: record_date
+        description: Market data timestamp.

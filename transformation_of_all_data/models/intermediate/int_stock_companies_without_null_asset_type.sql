@@ -9,7 +9,7 @@
 WITH rows_with_null_asset_type AS 
 (
     SELECT 
-        date,
+        record_date,
         symbol,
         asset_type
     FROM 

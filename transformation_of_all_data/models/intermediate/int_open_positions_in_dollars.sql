@@ -7,16 +7,22 @@
 }}
 
 SELECT 
-        asset_category,
-        currency_used_for_purchasing_the_asset,
+        -- Asset identifier
         asset_symbol,
-        quantity_of_assets_held,
-        avg_cost_of_an_unit_of_the_asset,
-        latest_closing_price_of_an_unit_of_the_asset,
-        total_cost_for_all_units_of_the_asset,
-        market_value_for_all_units_of_the_asset,
-        unrealized_profit_or_loss_for_all_units_of_the_asset
+
+        -- Asset trading information
+        asset_currency_used_for_trading,
+        asset_quantity_held,
+
+        -- Asset performance information at the unit level
+        asset_current_value_of_one_unit,
+        asset_cost_of_one_unit,
+
+        -- Asset performance information at the position level
+        asset_current_position_value,
+        asset_total_cost_of_the_position,
+        asset_unrealized_profit_and_loss
 FROM 
         {{ ref('int_open_positions') }}
-WHERE 
-        currency_used_for_purchasing_the_asset = 'USD'
+WHERE
+        asset_currency_used_for_trading = 'USD'

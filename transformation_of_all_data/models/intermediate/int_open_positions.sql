@@ -6,23 +6,32 @@
     )
 }}
 
+-- ===============================================================================================================
+-- Select only the relevant columns: 
+-- 1. Exclude client information, which is useless for the analysis (only 1 client=me).
+-- 2. Exclude all identifiers except asset_symbol because the other ones would be useful only if two stock can
+-- share the same symbol, which is not the case in our dataset.
+-- 3. Exclude all asset trading information, which is useless for the analysis.
+-- 4. Exclude asset_position_type because it is always equal to Long.
+-- 5. Split value information at the unit and position levels to make it easier to compute the profit and loss later on.
+-- ===============================================================================================================
+
 SELECT 
-        CASE 
-            WHEN asset_category = 'Actions' THEN 'STOCKS'
-            WHEN asset_category = 'Fonds' THEN 'FUNDS'
-            WHEN asset_category = 'ETF' THEN 'ETFS'
-            WHEN asset_category = 'Obligations' THEN 'BONDS'
-            WHEN asset_category = 'Options' THEN 'OPTIONS'
-            WHEN asset_category = 'Futures' THEN 'FUTURES'
-            ELSE asset_category
-        END AS asset_category,
-        currency_used_for_purchasing_the_asset,
+        -- Asset identifier
         asset_symbol,
-        quantity_of_assets_held,
-        avg_cost_of_an_unit_of_the_asset,
-        latest_closing_price_of_an_unit_of_the_asset,
-        total_cost_for_all_units_of_the_asset,
-        market_value_for_all_units_of_the_asset,
-        unrealized_profit_or_loss_for_all_units_of_the_asset
+
+        -- Asset trading information
+        asset_currency_used_for_trading,
+        asset_quantity_held,
+
+        -- Asset performance information at the unit level
+        asset_current_value_of_one_unit,
+        asset_cost_of_one_unit,
+
+        -- Asset performance information at the position level
+        asset_current_position_value,
+        asset_total_cost_of_the_position,
+        asset_unrealized_profit_and_loss
+        
 FROM 
         {{ ref('stg_open_positions') }}

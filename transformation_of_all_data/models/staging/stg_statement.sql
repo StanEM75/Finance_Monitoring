@@ -11,10 +11,12 @@
 -- ================================================================================================================
 
 SELECT 
-        BrokerName AS broker_name,
-        BrokerAddress AS broker_address,
-        Title AS document_title,
-        Period AS period_covered,
-        WhenGenerated AS document_generation_timestamp
+        -- Client information
+        ClientAccountID AS client_account_id,
+        AccountAlias AS client_account_alias,
+        CurrencyPrimary AS client_account_primary_currency,
+        AccountType AS client_account_type,
+        IBEntity AS client_account_ib_entity,
+        TaxLotMatchingMethod AS client_account_tax_lot_matching_method,
 FROM
         {{ source('raw', 'raw_statement_data') }}

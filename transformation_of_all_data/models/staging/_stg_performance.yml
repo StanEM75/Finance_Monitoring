@@ -2,14 +2,18 @@ version: 2
 
 models:
   - name: stg_performance
-    description: Standardizes realized and unrealized profit and loss data extracted from the Interactive Brokers statement.
-
+    description: Standardizes realized and unrealized performance from the IBKR FIFO section.
     columns:
-      - name: asset_category
-        description: Asset class of the financial instrument.
-
+      - name: client_account_id
+        description: Interactive Brokers client account identifier.
+      - name: asset_contract_id
+        description: IBKR contract identifier.
+      - name: asset_international_security_identification_number
+        description: International Securities Identification Number.
+      - name: asset_class
+        description: IBKR asset class code.
       - name: asset_symbol
-        description: Stock ticker symbol.
+        description: Ticker symbol identifying the financial instrument.
         data_tests:
           - not_null:
               config:
@@ -17,42 +21,21 @@ models:
                 schema: DBT_TESTS
                 alias: stg_performance_asset_symbol_not_null
                 severity: error
-
-      - name: adjusted_cost_of_the_asset
-        description: Cost adjustment applied to the asset.
-
-      - name: realized_short_term_profit_for_sale_of_the_asset
-        description: Realized short-term profit.
-
-      - name: realized_loss_for_sale_of_the_asset
-        description: Realized short-term loss.
-
-      - name: realized_long_term_profit_for_sale_of_the_asset
-        description: Realized long-term profit.
-
-      - name: realized_long_term_loss_for_sale_of_the_asset
-        description: Realized long-term loss.
-
-      - name: total_realized_profit_or_loss_for_sale_of_the_asset
+      - name: asset_full_name
+        description: Full name of the financial instrument.
+      - name: asset_trading_place
+        description: Exchange on which the instrument is listed.
+      - name: asset_multiplier
+        description: Contract multiplier.
+      - name: asset_cost_adjustment
+        description: Cost-basis adjustment applied by IBKR.
+      - name: asset_total_realized_profit_and_loss
         description: Total realized profit or loss.
-
-      - name: unrealized_short_term_profit_for_sale_of_the_asset
-        description: Unrealized short-term profit.
-
-      - name: unrealized_short_term_loss_for_sale_of_the_asset
-        description: Unrealized short-term loss.
-
-      - name: unrealized_long_term_profit_for_sale_of_the_asset
-        description: Unrealized long-term profit.
-
-      - name: unrealized_long_term_loss_for_sale_of_the_asset
-        description: Unrealized long-term loss.
-
-      - name: total_unrealized_profit_or_loss_for_sale_of_the_asset
+      - name: asset_total_unrealized_profit_and_loss
         description: Total unrealized profit or loss.
-
-      - name: total_profit_or_loss_for_sale_of_the_asset
-        description: Total profit or loss (realized + unrealized).
-
-      - name: asset_code
-        description: Optional instrument code.
+      - name: asset_total_fifo_method_profit_and_loss
+        description: Combined realized and unrealized FIFO profit or loss.
+      - name: asset_transferred_profit_and_loss
+        description: Profit or loss transferred into the account.
+      - name: row_record_date
+        description: Date associated with the performance snapshot.

@@ -8,16 +8,21 @@
 
 -- ===============================================================================================================
 -- Select only the relevant columns: 
--- 1. Exclude adjusted_cost_of_the_asset that is always equal to 0 for all assets in the portfolio
--- 2. Exclude all short and long term profit and loss columns as we only need the total
--- 3. Exclude asset_code that is always null
+-- 1. Exclude client information, which is useless for the analysis (only 1 client=me).
+-- 2. Exclude all identifiers except asset_symbol because the other ones would be useful only if two stock can
+-- share the same symbol, which is not the case in our dataset.
+-- 3. Exclude all asset trading information, which is useless for the analysis.
+-- 4. Exclude asset_transferred_profit_and_loss because it is always equal to 0 in the dataset.
+-- 5. Exclude row_record_date because it is only useful for freshness test.
 -- ===============================================================================================================
 
 SELECT 
-        asset_category,
+        -- Asset identifier
         asset_symbol,
-        total_realized_profit_or_loss_for_sale_of_the_asset,
-        total_unrealized_profit_or_loss_for_sale_of_the_asset,
-        total_profit_or_loss_for_sale_of_the_asset
+
+        -- Asset performance information
+        asset_total_realized_profit_and_loss,
+        asset_total_unrealized_profit_and_loss,
+        asset_total_fifo_method_profit_and_loss
 FROM
         {{ ref('stg_performance') }}

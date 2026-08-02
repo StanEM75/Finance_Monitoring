@@ -16,13 +16,13 @@
 WITH stock_with_previous_close AS 
 (
     SELECT
-            date,
-            symbol,
-            open_price,
-            close_price,
-            LAG(close_price) OVER (
-                PARTITION BY symbol
-                ORDER BY date
+            record_date,
+            asset_symbol,
+            asset_open_price,
+            asset_close_price,
+            LAG(asset_close_price) OVER (
+                PARTITION BY asset_symbol
+                ORDER BY record_date
             ) AS previous_close_price
 
     FROM 
@@ -38,7 +38,7 @@ invalid_rows AS
             stock_with_previous_close
     WHERE 
             previous_close_price IS NOT NULL
-            AND ABS(open_price - previous_close_price) > 0.10 * previous_close_price
+            AND ABS(asset_open_price - previous_close_price) > 0.10 * previous_close_price
 )
 
 SELECT 
