@@ -11,7 +11,7 @@ import duckdb
 
 ROOT = Path(__file__).resolve().parents[1]
 
-DB_PATH = ROOT / "financial.duckdb"
+DB_PATH = ROOT / "warehouse" / "financial.duckdb"
 DATA_PATH = ROOT / "data"
 
 def load_raw_tables():
