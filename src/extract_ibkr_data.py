@@ -34,16 +34,16 @@ def parse_ibkr_report(path: str) -> dict[str, pd.DataFrame]:
             # Extract the first and second columns
             
             # The first column is the section name
-            section = row[0]
+            section = row[1]
             # The second column is the row type, which can be either "Header" or "Data"
-            row_type = row[1]
+            row_type = row[0]
 
             # If the row is an header, store the columns names from the third column onwards (2 first are just for information)
-            if row_type == "Header":
+            if row_type == "HEADER":
                 headers[section] = row[2:]
 
             # If the row is data, store the columns in the order mentioned by the header
-            elif row_type == "Data":
+            elif row_type == "DATA":
                 sections[section].append(row[2:])
 
     # Instantiate a dictionary to hold the DataFrames corresponding to each section
@@ -110,13 +110,13 @@ def pivot_key_value_table(df: pd.DataFrame) -> pd.DataFrame:
 #                             ONLY KEEP RELEVANT TABLES
 # ================================================================================
 
-statement = pivot_key_value_table(tables["Statement"])
+statement = tables["ACCT"]
 
 logging.info(f"Statement table transformed successfully. Contains {len(statement)} rows and {len(statement.columns)} columns.")
 
-performance = tables["Synthèse de la performance réalisée et non-réalisée"]
+performance = tables["FIFO"]
 
-open_positions = tables["Positions ouvertes"]
+open_positions = tables["POST"]
 
 # ================================================================================
 #                                       EXPORT DATA
@@ -136,7 +136,6 @@ logging.info(f"Performance table exported successfully. Contains {len(performanc
 open_positions.to_csv("/Users/stanislas/Projets/Business/financial-api/data/df_open_positions.csv", index=False)
 
 logging.info(f"Open positions table exported successfully. Contains {len(open_positions)} rows and {len(open_positions.columns)} columns.")
-
 
 
 
