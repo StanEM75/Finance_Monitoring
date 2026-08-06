@@ -1,3 +1,7 @@
+# ================================================================================
+#                                     PACKAGES
+# ================================================================================
+
 from __future__ import annotations
 
 import os
@@ -8,6 +12,10 @@ import requests
 
 
 def get_marketstack_stock_data(
+
+    # ================================================================================
+    #                                     CONSTANTS
+    # ================================================================================
     symbol_sources: tuple[tuple[str, str], ...] = (
         (
             "/usr/local/airflow/include/data/stocks_to_pick.csv",
@@ -22,13 +30,12 @@ def get_marketstack_stock_data(
     api_url: str = "https://api.marketstack.com/v2/eod",
     api_key_variable: str = "API_KEY",
     limit: int = 10_000,
+    lookback_months: int = 12,
 ) -> dict:
-    """
-    Récupère les données Marketstack pour les positions actuelles et
-    les actions susceptibles d'être achetées.
 
-    La fonction retourne un petit dictionnaire compatible avec Airflow XCom.
-    """
+    # ================================================================================
+    #                              LOAD STOCK SYMBOLS
+    # ================================================================================
 
     def load_symbols() -> list[str]:
         symbol_frames = []
@@ -70,14 +77,23 @@ def get_marketstack_stock_data(
             if symbol
         )
 
+    # ================================================================================
+    #                                       API CALL
+    # ================================================================================
+
     def call_marketstack(
         symbols: list[str],
         api_key: str,
     ) -> dict:
+        today = pd.Timestamp.now(tz="UTC")
         params = {
             "access_key": api_key,
             "symbols": ",".join(symbols),
             "limit": limit,
+            "date_from": (
+                today - pd.DateOffset(months=lookback_months)
+            ).date().isoformat(),
+            "date_to": today.date().isoformat(),
         }
 
         try:
