@@ -38,6 +38,7 @@ def get_marketstack_stock_data(
     # ================================================================================
 
     def load_symbols() -> list[str]:
+        # Collect symbols from held positions and from the monitoring list.
         symbol_frames = []
 
         for file_path, symbol_column in symbol_sources:
@@ -50,6 +51,7 @@ def get_marketstack_stock_data(
 
             dataframe = pd.read_csv(path)
 
+            # Fail with an explicit message if an upstream CSV changed schema.
             if symbol_column not in dataframe.columns:
                 raise ValueError(
                     f"La colonne '{symbol_column}' est absente de {path}. "
@@ -66,6 +68,7 @@ def get_marketstack_stock_data(
 
             symbol_frames.append(symbols)
 
+        # Merge, deduplicate and sort symbols before building the API parameter.
         all_symbols = pd.concat(
             symbol_frames,
             ignore_index=True,
@@ -85,6 +88,7 @@ def get_marketstack_stock_data(
         symbols: list[str],
         api_key: str,
     ) -> dict:
+        # Request one rolling year of end-of-day prices by default.
         today = pd.Timestamp.now(tz="UTC")
         params = {
             "access_key": api_key,
@@ -97,6 +101,7 @@ def get_marketstack_stock_data(
         }
 
         try:
+            # Use a timeout so an unavailable API does not block an Airflow worker.
             response = requests.get(
                 api_url,
                 params=params,
@@ -110,6 +115,7 @@ def get_marketstack_stock_data(
 
         payload = response.json()
 
+        # Marketstack can return an API error inside a successful HTTP response.
         if "error" in payload:
             api_error = payload["error"]
 
@@ -131,6 +137,11 @@ def get_marketstack_stock_data(
 
         return payload
 
+    # ============================================================================
+    #                             TRANSFORM API RESPONSE
+    # ============================================================================
+
+    # Convert the JSON records into a clean tabular dataset.
     def transform_response(payload: dict) -> pd.DataFrame:
         dataframe = pd.DataFrame(payload["data"])
 
@@ -151,6 +162,7 @@ def get_marketstack_stock_data(
         ]
 
         if deduplication_columns:
+            # Keep the latest record when the API returns duplicate observations.
             dataframe = dataframe.drop_duplicates(
                 subset=deduplication_columns,
                 keep="last",
@@ -158,6 +170,11 @@ def get_marketstack_stock_data(
 
         return dataframe.reset_index(drop=True)
 
+    # ============================================================================
+    #                               EXPORT STOCK DATA
+    # ============================================================================
+
+    # Save atomically so downstream tasks never read a partially written CSV.
     def save_dataframe(dataframe: pd.DataFrame) -> None:
         destination = Path(output_path)
         destination.parent.mkdir(parents=True, exist_ok=True)
@@ -171,6 +188,11 @@ def get_marketstack_stock_data(
 
         temporary_path.replace(destination)
 
+    # ============================================================================
+    #                              RUN COMPLETE TASK
+    # ============================================================================
+
+    # Airflow injects the API key through an environment variable or secret.
     api_key = os.getenv(api_key_variable)
 
     if not api_key:
@@ -186,6 +208,7 @@ def get_marketstack_stock_data(
             "Aucun symbole valide n'a été trouvé dans les CSV."
         )
 
+    # Fetch, transform and persist the complete price history.
     payload = call_marketstack(symbols, api_key)
     stock_data = transform_response(payload)
 
@@ -196,6 +219,11 @@ def get_marketstack_stock_data(
 
     save_dataframe(stock_data)
 
+    # ============================================================================
+    #                               RETURN METADATA
+    # ============================================================================
+
+    # Return lightweight metadata suitable for an Airflow XCom value.
     return {
         "symbols_requested": len(symbols),
         "rows_received": len(stock_data),

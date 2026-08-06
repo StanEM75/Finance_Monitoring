@@ -1,9 +1,17 @@
+# ================================================================================
+#                                     PACKAGES
+# ================================================================================
+
 from __future__ import annotations
 
 from pathlib import Path
 
 import duckdb
 
+
+# ================================================================================
+#                            LOAD RAW TABLES INTO DUCKDB
+# ================================================================================
 
 def load_to_duckdb(
     database_path: str = (
@@ -13,6 +21,11 @@ def load_to_duckdb(
 ) -> dict[str, int | str]:
     """Load the pipeline CSV files into DuckDB raw tables."""
 
+    # ============================================================================
+    #                         MAP TABLES TO SOURCE FILES
+    # ============================================================================
+
+    # Associate each raw DuckDB table with its upstream CSV file.
     table_sources = {
         "raw_stock_data": "stock_data.csv",
         "raw_statement_data": "df_statement.csv",
@@ -22,6 +35,11 @@ def load_to_duckdb(
     source_directory = Path(data_directory)
     destination = Path(database_path)
 
+    # ============================================================================
+    #                              VALIDATE INPUTS
+    # ============================================================================
+
+    # Validate all inputs before opening the database or replacing any table.
     missing_files = [
         source_directory / filename
         for filename in table_sources.values()
@@ -31,14 +49,21 @@ def load_to_duckdb(
         missing = ", ".join(str(path) for path in missing_files)
         raise FileNotFoundError(f"Missing source CSV file(s): {missing}")
 
+    # Create the warehouse directory when the Airflow volume is initialized.
     destination.parent.mkdir(parents=True, exist_ok=True)
     row_counts: dict[str, int] = {}
 
+    # ============================================================================
+    #                           LOAD TABLES IN A TRANSACTION
+    # ============================================================================
+
+    # Load all raw tables in one transaction to keep the warehouse consistent.
     with duckdb.connect(str(destination)) as connection:
         connection.execute("BEGIN TRANSACTION")
         try:
             for table_name, filename in table_sources.items():
                 csv_path = (source_directory / filename).resolve()
+                # Escape quotes before inserting a filesystem path into DuckDB SQL.
                 escaped_path = str(csv_path).replace("'", "''")
                 connection.execute(
                     f"""
@@ -52,9 +77,15 @@ def load_to_duckdb(
                 ).fetchone()[0]
             connection.execute("COMMIT")
         except Exception:
+            # Restore every previous table if any CSV fails to load.
             connection.execute("ROLLBACK")
             raise
 
+    # ============================================================================
+    #                               RETURN METADATA
+    # ============================================================================
+
+    # Return row counts so Airflow logs and XCom expose the load result.
     return {
         "database_path": str(destination),
         **row_counts,
