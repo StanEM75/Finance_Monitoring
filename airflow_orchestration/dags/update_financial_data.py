@@ -7,9 +7,10 @@ from airflow.sdk import dag, task
 from pendulum import datetime
 
 # Slack notification callback
-from airflow.providers.slack.notifications.slack_webhook import (
-    send_slack_webhook_notification,
-)
+from airflow.providers.http.notifications.http import send_http_notification
+
+# To import environment variables from the .env file
+import os
 
 # ================================================================================
 #                              PROJECT FUNCTIONS
@@ -28,32 +29,38 @@ from include.extract_ibkr_data import extract_ibkr_data
 from include.load_to_duckdb import load_to_duckdb
 
 # ================================================================================
-#                              SLACK NOTIFICATIONS
+#                              NTFY NOTIFICATIONS
 # ================================================================================
 
-DAG_SUCCESS_NOTIFICATION = send_slack_webhook_notification(
-    slack_webhook_conn_id="slack_webhook",
-    text=(
-        "✅ *Financial data pipeline succeeded*\n"
-        "• DAG: `{{ dag.dag_id }}`\n"
-        "• Run: `{{ run_id }}`\n"
-        "• Execution date: `{{ logical_date }}`\n"
-        "• Last task: `{{ ti.task_id }}`\n"
-        "• Logs: {{ ti.log_url }}"
-    ),
+NTFY_TOPIC = os.environ["NTFY_TOPIC"]
+
+DAG_SUCCESS_NOTIFICATION = send_http_notification(
+    http_conn_id="ntfy",
+    endpoint=NTFY_TOPIC,
+    method="POST",
+    data="✅ Le pipeline {{ dag.dag_id }} s'est terminé correctement.",
+    headers={
+        "Title": "Airflow — succès",
+        "Priority": "default",
+        "Tags": "white_check_mark,chart_with_upwards_trend",
+    },
 )
 
-DAG_FAILURE_NOTIFICATION = send_slack_webhook_notification(
-    slack_webhook_conn_id="slack_webhook",
-    text=(
-        "❌ *Financial data pipeline failed*\n"
-        "• DAG: `{{ dag.dag_id }}`\n"
-        "• Run: `{{ run_id }}`\n"
-        "• Execution date: `{{ logical_date }}`\n"
-        "• Failed task: `{{ ti.task_id }}`\n"
-        "• Exception: `{{ exception | default('Unknown error') }}`\n"
-        "• Logs: {{ ti.log_url }}"
+DAG_FAILURE_NOTIFICATION = send_http_notification(
+    http_conn_id="ntfy",
+    endpoint=NTFY_TOPIC,
+    method="POST",
+    data=(
+        "❌ Échec du pipeline {{ dag.dag_id }}\n"
+        "Tâche : {{ ti.task_id }}\n"
+        "Run : {{ run_id }}\n"
+        "Logs : {{ ti.log_url }}"
     ),
+    headers={
+        "Title": "Airflow — échec",
+        "Priority": "high",
+        "Tags": "x,warning",
+    },
 )
 
 # ================================================================================
