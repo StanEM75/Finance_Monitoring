@@ -13,11 +13,11 @@ import sys
 SOURCE = Path(
     "/Users/stanislas/Library/CloudStorage/"
     "GoogleDrive-standhuart75@gmail.com/"
-    "My Drive/IBKR - Extract/ibkr_extract.csv"
+    "Mon Drive/IBKR - Extract/ibkr_extract.csv"
 )
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-DESTINATION = PROJECT_ROOT / "data" / "raw" / "ibkr_extract.csv"
+DESTINATION = PROJECT_ROOT / "data" / "ibkr_extract.csv"
 
 # ================================================================================
 #                              COPY LATEST IBKR EXTRACT
