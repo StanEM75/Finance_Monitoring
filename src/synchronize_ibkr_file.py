@@ -2,6 +2,9 @@
 #                                     PACKAGES
 # ================================================================================
 
+import os # For environment variables
+from dotenv import load_dotenv # To load .env file
+
 from pathlib import Path
 import shutil
 import sys
@@ -10,13 +13,20 @@ import sys
 #                                      PATHS
 # ================================================================================
 
-SOURCE = Path(
-    "/Users/stanislas/Library/CloudStorage/"
-    "GoogleDrive-standhuart75@gmail.com/"
-    "Mon Drive/IBKR - Extract/ibkr_extract.csv"
-)
-
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
+
+# Load the .env file located at the project root.
+load_dotenv(PROJECT_ROOT / ".env")
+
+source_path = os.getenv("SOURCE_PATH_IBKR_FILE")
+
+if not source_path:
+    raise ValueError(
+        "The SOURCE_PATH_IBKR_FILE environment variable is not defined."
+    )
+
+SOURCE = Path(source_path).expanduser()
+
 DESTINATION = PROJECT_ROOT / "data" / "ibkr_extract.csv"
 
 # ================================================================================
