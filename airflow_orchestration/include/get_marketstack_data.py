@@ -18,20 +18,20 @@ def get_marketstack_stock_data(
     # ================================================================================
     symbol_sources: tuple[tuple[str, str], ...] = (
         (
-            "/usr/local/airflow/include/data/stocks_to_pick.csv",
-            "symbol",
+            "/usr/local/airflow/include/data/outputs/stocks_to_pick.csv",
+            "asset_symbol",
         ),
         (
-            "/usr/local/airflow/include/data/stocks_to_monitor.csv",
+            "/usr/local/airflow/include/data/outputs/stocks_to_monitor.csv",
             "symbol",
         ),
-    ),
+                                                    ),
     output_path: str = "/usr/local/airflow/include/data/stock_data.csv",
     api_url: str = "https://api.marketstack.com/v2/eod",
     api_key_variable: str = "API_KEY",
     limit: int = 10_000,
     lookback_months: int = 12,
-) -> dict:
+                                ) -> dict:
 
     # ================================================================================
     #                              LOAD STOCK SYMBOLS
