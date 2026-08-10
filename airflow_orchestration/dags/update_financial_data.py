@@ -100,10 +100,10 @@ def update_financial_data():
         return get_marketstack_stock_data()
 
     @task(task_id="synchronize_ibkr_file")
-    def get_latest_ibkr_file() -> None:
+    def get_latest_ibkr_file() -> dict:
         return synchronize_ibkr_file(
         source_path=(
-            "/usr/local/airflow/include/data/incoming/"
+            "/usr/local/airflow/ibkr-drive/"
             "ibkr_extract.csv"
         ),
         destination_path=(
