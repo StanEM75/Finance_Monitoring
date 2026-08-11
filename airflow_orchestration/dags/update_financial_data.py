@@ -12,6 +12,8 @@ from airflow.providers.http.notifications.http import send_http_notification
 # To import environment variables from the .env file
 import os
 
+from datetime import timedelta
+
 # ================================================================================
 #                              PROJECT FUNCTIONS
 # ================================================================================
@@ -95,7 +97,12 @@ def update_financial_data():
     #                                  TASKS
     # ============================================================================
 
-    @task(task_id="get_marketstack_data")
+    @task(task_id="get_marketstack_data",
+    retries=3,
+    retry_delay=timedelta(minutes=2),
+    retry_exponential_backoff=True,
+    max_retry_delay=timedelta(minutes=10)
+    )
     def get_marketstack_data_task() -> dict:
         return get_marketstack_stock_data()
 
