@@ -14,6 +14,9 @@ import os
 
 from datetime import timedelta
 
+# To execute Bash commands for dbt transformations
+from airflow.providers.standard.operators.bash import BashOperator
+
 # ================================================================================
 #                              PROJECT FUNCTIONS
 # ================================================================================
@@ -98,10 +101,10 @@ def update_financial_data():
     # ============================================================================
 
     @task(task_id="get_marketstack_data",
-    retries=3,
-    retry_delay=timedelta(minutes=2),
-    retry_exponential_backoff=True,
-    max_retry_delay=timedelta(minutes=10)
+            retries=3,
+            retry_delay=timedelta(minutes=2),
+            retry_exponential_backoff=True,
+            max_retry_delay=timedelta(minutes=10)
     )
     def get_marketstack_data_task() -> dict:
         return get_marketstack_stock_data()
@@ -127,6 +130,27 @@ def update_financial_data():
     def update_duckdb() -> None:
         return load_to_duckdb()
 
+    dbt_build_task = BashOperator(
+        task_id="dbt_build",
+        bash_command="""
+            set -e
+            cd /usr/local/airflow/dbt
+
+            dbt deps \
+            --profiles-dir /usr/local/airflow/dbt_profiles
+
+            dbt build \
+            --profiles-dir /usr/local/airflow/dbt_profiles \
+            --target dev
+        """,
+        env={
+            "DBT_OUTPUT_DIR": (
+                "/usr/local/airflow/include/data/outputs"
+            ),
+        },
+        append_env=True,
+    )
+
     # ============================================================================
     #                              TASK DEPENDENCIES
     # ============================================================================
@@ -136,7 +160,7 @@ def update_financial_data():
     ibkr_extract_task = move_ibkr_data_to_tables()
     duckdb_load_task = update_duckdb()
 
-    marketstack_task >> ibkr_sync_task >> ibkr_extract_task >> duckdb_load_task
+    marketstack_task >> ibkr_sync_task >> ibkr_extract_task >> duckdb_load_task >> dbt_build_task
 
 
 update_financial_data()

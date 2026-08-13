@@ -6,7 +6,7 @@
         post_hook=[
                         "COPY (
                                 SELECT * FROM {{ this }}
-                        ) TO '/Users/stanislas/Projets/Business/financial-api/data/outputs/stocks_to_pick.csv'
+                        ) TO '{{ env_var('DBT_OUTPUT_DIR') }}/stocks_to_pick.csv'
                         (
                                 FORMAT CSV,
                                 HEADER TRUE,
