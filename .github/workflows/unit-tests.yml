@@ -1,0 +1,87 @@
+# ==============================================================================
+# dbt Unit Tests (dev)
+#
+# Runs dbt unit tests on the `dev` branch only (never on `main`).
+#
+# The workflow:
+#   - checks out the repository
+#   - installs Python + dbt-duckdb
+#   - creates an ephemeral DuckDB profile for CI
+#   - installs dbt dependencies
+#   - runs dbt unit tests only
+#
+# DuckDB is embedded, so no external database or secrets are required.
+# ==============================================================================
+name: dbt Unit Tests (dev)
+
+# Dev only: triggers exclusively on the dev branch, never on main.
+on:
+  push:
+    branches: [dev]
+
+permissions:
+  contents: read
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: transformation_of_all_data
+
+    steps:
+      # ------------------------------------------------------------------------
+      # Checkout repository
+      # ------------------------------------------------------------------------
+      - uses: actions/checkout@v4
+
+      # ------------------------------------------------------------------------
+      # Python
+      # ------------------------------------------------------------------------
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # ------------------------------------------------------------------------
+      # Install dbt
+      # ------------------------------------------------------------------------
+      - name: Install dbt
+        run: pip install dbt-duckdb
+
+      # ------------------------------------------------------------------------
+      # CI dbt profile
+      #
+      # We use a temporary DuckDB database because unit tests should not need
+      # access to the real development or production database.
+      # ------------------------------------------------------------------------
+      - name: Write ephemeral dbt profile
+        run: |
+          mkdir -p ~/.dbt
+          cat > ~/.dbt/profiles.yml <<'EOF'
+          transformation_of_all_data:
+            target: ci
+            outputs:
+              ci:
+                type: duckdb
+                path: /tmp/ci.duckdb
+                threads: 1
+          EOF
+
+      # ------------------------------------------------------------------------
+      # Install dbt packages
+      # ------------------------------------------------------------------------
+      - name: dbt deps
+        run: dbt deps
+
+      # ------------------------------------------------------------------------
+      # Validate that the dbt project can be parsed
+      # ------------------------------------------------------------------------
+      - name: dbt parse
+        run: dbt parse
+
+      # ------------------------------------------------------------------------
+      # Run unit tests only
+      # ------------------------------------------------------------------------
+      - name: Run dbt unit tests
+        run: dbt test --select resource_type:unit_test
