@@ -6,6 +6,8 @@ import requests # For API calls
 import os # For environment variables
 from dotenv import load_dotenv # To load .env file
 import pandas as pd # For data manipulation and converting JSON to DataFrame
+from pydantic import BaseModel, HttpUrl, field_validator # For detailed type validation and parsing
+from typing import Any
 
 today = pd.Timestamp.now(tz="UTC")
 
@@ -27,13 +29,13 @@ api_key = os.getenv("API_KEY")
 # ================================================================================
 
 # Retrieve the current positions in the portfolio (only current positions are interesting to get data for)
-df1 = pd.read_csv('../data/outputs/stocks_to_pick.csv')
+df1 = pd.read_csv('../data/outputs/stocks_to_pick_dev.csv')
 
 # Rename the column 'asset_symbol' to 'symbol' to merge on a common column with the second dataframe later on
 df1 = df1.rename(columns={'asset_symbol': 'symbol'})
 
 # Retrieve the list of symbols not owned today but that could be interesting in the future
-df2 = pd.read_csv('../data/outputs/stocks_to_monitor.csv')
+df2 = pd.read_csv('../data/outputs/stocks_to_monitor_dev.csv')
 
 df = pd.concat([df1, df2], ignore_index=True)
 
@@ -59,18 +61,48 @@ params = {
 }
 
 # ================================================================================
+#                                VALIDATE DATA AND CONFIGURATION
+# ================================================================================
+class MarketstackConfig(BaseModel):
+    url: HttpUrl
+    params: dict[str, Any]
+
+    @field_validator("url")
+    @classmethod
+    def require_https(cls, url: HttpUrl) -> HttpUrl:
+        if url.scheme != "https":
+            raise ValueError("The API URL must use HTTPS.")
+        return url
+
+    @field_validator("params")
+    @classmethod
+    def validate_params(
+                            cls,
+                            params: dict[str, Any],
+                        ) -> dict[str, Any]:
+        if "access_key" not in params or not params["access_key"]:
+            raise ValueError("The 'access_key' parameter is required and cannot be empty.")
+        if "symbols" not in params or not params["symbols"]:
+            raise ValueError("The 'symbols' parameter is required and cannot be empty.")
+        if "limit" not in params or not isinstance(params["limit"], int) or params["limit"] <= 0:
+            raise ValueError("The 'limit' parameter must be a positive integer.")
+        return params
+
+# ================================================================================
 #                                FUNCTION TO GET DATA
 # ================================================================================
 
 # Define a function to call the API and handle potential errors
-def get_stock_data(url, params):
+def get_stock_data(
+    config: MarketstackConfig,
+) -> dict[str, Any]:
     try:
         # Get a response from the API
         response = requests.get(
-            url,
-            params=params,
-            timeout=(10, 120),
-        )
+                    str(config.url),
+                    params=config.params,
+                    timeout=(10, 120),
+                                )
         # Raise the status of the call: success or error
         response.raise_for_status()
     # Handle request exceptions
@@ -103,7 +135,7 @@ def get_stock_data(url, params):
     return payload
 
 # Call the function to call the API and get stock data required
-data = get_stock_data(url, params)
+data = get_stock_data(MarketstackConfig(url=url, params=params))
 
 # Convert the 'data' part of the JSON response to a Pandas DataFrame and print the data
 df = pd.DataFrame(data["data"])
@@ -122,4 +154,4 @@ df["date"] = pd.to_datetime(
 print(df.shape)
 
 # Export the dataframe to a CSV file for further analysis
-df.to_csv("../data/stock_data.csv", index=False)
+df.to_csv("../data/stock_data_dev.csv", index=False)
