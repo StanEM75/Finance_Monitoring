@@ -11,10 +11,10 @@ from pathlib import Path
 
 import pandas as pd
 
-
 # ================================================================================
 #                         EXTRACT AND TRANSFORM IBKR DATA
 # ================================================================================
+
 
 def extract_ibkr_data(
     input_path: str = "/usr/local/airflow/include/data/ibkr_extract.csv",

@@ -8,15 +8,13 @@ from pathlib import Path
 
 import duckdb
 
-
 # ================================================================================
 #                            LOAD RAW TABLES INTO DUCKDB
 # ================================================================================
 
+
 def load_to_duckdb(
-    database_path: str = (
-        "/usr/local/airflow/include/warehouse/financial.duckdb"
-    ),
+    database_path: str = ("/usr/local/airflow/include/warehouse/financial.duckdb"),
     data_directory: str = "/usr/local/airflow/include/data",
 ) -> dict[str, int | str]:
     """Load the pipeline CSV files into DuckDB raw tables."""

@@ -1,10 +1,11 @@
 # ================================================================================
 #                                     PACKAGES
 # ================================================================================
-from collections import defaultdict
-import pandas as pd
 import csv
 import logging
+from collections import defaultdict
+
+import pandas as pd
 
 logging.basicConfig(level=logging.INFO)
 
@@ -12,9 +13,10 @@ logging.basicConfig(level=logging.INFO)
 #                        CREATE A FUNCTION TO IMPORT IBKR DATA
 # ================================================================================
 
-# Define a function automating the parsing of IBKR reports into a dictionary of DataFrames
+
+# Parse IBKR reports into a dictionary of DataFrames.
 def parse_ibkr_report(path: str) -> dict[str, pd.DataFrame]:
-    
+
     # sections includes all data rows
     sections = defaultdict(list)
     # headers includes all columns names for each section
@@ -26,19 +28,18 @@ def parse_ibkr_report(path: str) -> dict[str, pd.DataFrame]:
 
         # Go through every row in the CSV file
         for row in reader:
-
-            # Rows having less than 2 columns are ignored, as they may not contain useful information
+            # Ignore rows with fewer than two columns because they are incomplete.
             if len(row) < 2:
                 continue
 
             # Extract the first and second columns
-            
+
             # The first column is the section name
             section = row[1]
             # The second column is the row type, which can be either "Header" or "Data"
             row_type = row[0]
 
-            # If the row is an header, store the columns names from the third column onwards (2 first are just for information)
+            # Store header names from the third column onward.
             if row_type == "HEADER":
                 headers[section] = row[2:]
 
@@ -53,7 +54,6 @@ def parse_ibkr_report(path: str) -> dict[str, pd.DataFrame]:
 
     # Navigate through each section and its corresponding rows
     for section, rows in sections.items():
-
         # Columns in a DataFrame = Headers in section
         columns = headers.get(section)
 
@@ -63,7 +63,7 @@ def parse_ibkr_report(path: str) -> dict[str, pd.DataFrame]:
         if columns and all(len(r) == len(columns) for r in rows):
             dfs[section] = pd.DataFrame(rows, columns=columns)
         else:
-        # If the conditions are not met, create a DataFrame without columns to record errors
+            # Otherwise, create a DataFrame without named columns.
             dfs[section] = pd.DataFrame(rows)
 
     # The output of the function is a dictionary of DataFrames
@@ -82,6 +82,7 @@ tables = parse_ibkr_report("../data/ibkr_extract.csv")
 #                   TRANSPOSE DATA INTO TABLES (IF APPLICABLE)
 # ================================================================================
 
+
 def pivot_key_value_table(df: pd.DataFrame) -> pd.DataFrame:
     """
     Convert a two-column key-value DataFrame into a single-row DataFrame.
@@ -93,13 +94,7 @@ def pivot_key_value_table(df: pd.DataFrame) -> pd.DataFrame:
     key_col = df.columns[0]
     value_col = df.columns[1]
 
-    df = (
-        df
-        .set_index(key_col)[value_col]
-        .to_frame()
-        .T
-        .reset_index(drop=True)
-    )
+    df = df.set_index(key_col)[value_col].to_frame().T.reset_index(drop=True)
 
     df.columns.name = None
 
@@ -112,7 +107,10 @@ def pivot_key_value_table(df: pd.DataFrame) -> pd.DataFrame:
 
 statement = tables["ACCT"]
 
-logging.info(f"Statement table transformed successfully. Contains {len(statement)} rows and {len(statement.columns)} columns.")
+logging.info(
+    f"Statement table transformed successfully. Contains {len(statement)} rows "
+    f"and {len(statement.columns)} columns."
+)
 
 performance = tables["FIFO"]
 
@@ -123,19 +121,34 @@ open_positions = tables["POST"]
 # ================================================================================
 
 # A table to extract the date of generation of the report
-statement.to_csv("/Users/stanislas/Projets/Business/financial-api/data/df_statement.csv", index=False)
+statement.to_csv(
+    "/Users/stanislas/Projets/Business/financial-api/data/df_statement.csv",
+    index=False,
+)
 
-logging.info(f"Statement table exported successfully. Contains {len(statement)} rows and {len(statement.columns)} columns.")
+logging.info(
+    f"Statement table exported successfully. Contains {len(statement)} rows "
+    f"and {len(statement.columns)} columns."
+)
 
-# A table to extract the performance summary for open and closed positions, including realized and unrealized P&L
-performance.to_csv("/Users/stanislas/Projets/Business/financial-api/data/df_performance.csv", index=False)
+# Export the performance summary for open and closed positions.
+performance.to_csv(
+    "/Users/stanislas/Projets/Business/financial-api/data/df_performance.csv",
+    index=False,
+)
 
-logging.info(f"Performance table exported successfully. Contains {len(performance)} rows and {len(performance.columns)} columns.")
+logging.info(
+    f"Performance table exported successfully. Contains {len(performance)} rows "
+    f"and {len(performance.columns)} columns."
+)
 
-# A table with open positions, including details such as symbol, quantity, average price, market value, and unrealized P&L
-open_positions.to_csv("/Users/stanislas/Projets/Business/financial-api/data/df_open_positions.csv", index=False)
+# Export open positions with their quantity, price, value, and unrealized P&L.
+open_positions.to_csv(
+    "/Users/stanislas/Projets/Business/financial-api/data/df_open_positions.csv",
+    index=False,
+)
 
-logging.info(f"Open positions table exported successfully. Contains {len(open_positions)} rows and {len(open_positions.columns)} columns.")
-
-
-
+logging.info(
+    f"Open positions table exported successfully. Contains {len(open_positions)} rows "
+    f"and {len(open_positions.columns)} columns."
+)

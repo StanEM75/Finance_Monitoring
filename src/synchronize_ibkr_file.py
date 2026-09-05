@@ -2,12 +2,12 @@
 #                                     PACKAGES
 # ================================================================================
 
-import os # For environment variables
-from dotenv import load_dotenv # To load .env file
-
-from pathlib import Path
+import os  # For environment variables
 import shutil
 import sys
+from pathlib import Path
+
+from dotenv import load_dotenv  # To load .env file
 
 # ================================================================================
 #                                      PATHS
@@ -21,9 +21,7 @@ load_dotenv(PROJECT_ROOT / ".env")
 source_path = os.getenv("SOURCE_PATH_IBKR_FILE")
 
 if not source_path:
-    raise ValueError(
-        "The SOURCE_PATH_IBKR_FILE environment variable is not defined."
-    )
+    raise ValueError("The SOURCE_PATH_IBKR_FILE environment variable is not defined.")
 
 SOURCE = Path(source_path).expanduser()
 
@@ -33,11 +31,10 @@ DESTINATION = PROJECT_ROOT / "data" / "ibkr_extract.csv"
 #                              COPY LATEST IBKR EXTRACT
 # ================================================================================
 
+
 def main() -> None:
     if not SOURCE.exists():
-        raise FileNotFoundError(
-            f"Drive file not found: {SOURCE}"
-        )
+        raise FileNotFoundError(f"Drive file not found: {SOURCE}")
 
     DESTINATION.parent.mkdir(parents=True, exist_ok=True)
 
