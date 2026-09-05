@@ -10,6 +10,56 @@ from pathlib import Path
 import pandas as pd
 import requests
 
+from pydantic import BaseModel, HttpUrl, PositiveInt, field_validator
+
+
+class MarketstackConfig(BaseModel):
+    api_url: HttpUrl
+    api_key_variable: str
+    limit: PositiveInt
+    lookback_months: PositiveInt
+
+    @field_validator("api_url")
+    @classmethod
+    def require_https(cls, api_url: HttpUrl) -> HttpUrl:
+        if api_url.scheme != "https":
+            raise ValueError("The API URL must use HTTPS.")
+        return api_url
+
+    @field_validator("api_key_variable")
+    @classmethod
+    def validate_api_key_variable(cls, value: str) -> str:
+        value = value.strip()
+
+        if not value:
+            raise ValueError(
+                "The 'api_key_variable' parameter cannot be empty."
+            )
+
+        return value
+
+
+class MarketstackRequest(BaseModel):
+    symbols: list[str]
+
+    @field_validator("symbols")
+    @classmethod
+    def validate_symbols(cls, symbols: list[str]) -> list[str]:
+        cleaned_symbols = sorted(
+            {
+                symbol.strip().upper()
+                for symbol in symbols
+                if symbol and symbol.strip()
+            }
+        )
+
+        if not cleaned_symbols:
+            raise ValueError(
+                "At least one stock symbol is required."
+            )
+
+        return cleaned_symbols
+
 
 def get_marketstack_stock_data(
 
@@ -32,6 +82,14 @@ def get_marketstack_stock_data(
     limit: int = 10_000,
     lookback_months: int = 12,
                                 ) -> dict:
+
+    # Validate the task configuration before reading files or calling the API.
+    config = MarketstackConfig(
+        api_url=api_url,
+        api_key_variable=api_key_variable,
+        limit=limit,
+        lookback_months=lookback_months,
+    )
 
     # ================================================================================
     #                              LOAD STOCK SYMBOLS
@@ -93,9 +151,9 @@ def get_marketstack_stock_data(
         params = {
             "access_key": api_key,
             "symbols": ",".join(symbols),
-            "limit": limit,
+            "limit": config.limit,
             "date_from": (
-                today - pd.DateOffset(months=lookback_months)
+                today - pd.DateOffset(months=config.lookback_months)
             ).date().isoformat(),
             "date_to": today.date().isoformat(),
         }
@@ -103,7 +161,7 @@ def get_marketstack_stock_data(
         try:
             # Use a timeout so an unavailable API does not block an Airflow worker.
             response = requests.get(
-                api_url,
+                str(config.api_url),
                 params=params,
                 timeout=30,
             )
@@ -193,23 +251,20 @@ def get_marketstack_stock_data(
     # ============================================================================
 
     # Airflow injects the API key through an environment variable or secret.
-    api_key = os.getenv(api_key_variable)
+    api_key = os.getenv(config.api_key_variable)
 
     if not api_key:
         raise ValueError(
-            f"La variable d'environnement {api_key_variable} "
+            f"La variable d'environnement {config.api_key_variable} "
             "n'est pas définie."
         )
 
-    symbols = load_symbols()
-
-    if not symbols:
-        raise ValueError(
-            "Aucun symbole valide n'a été trouvé dans les CSV."
-        )
+    request = MarketstackRequest(
+        symbols=load_symbols(),
+    )
 
     # Fetch, transform and persist the complete price history.
-    payload = call_marketstack(symbols, api_key)
+    payload = call_marketstack(request.symbols, api_key)
     stock_data = transform_response(payload)
 
     if stock_data.empty:
@@ -225,7 +280,7 @@ def get_marketstack_stock_data(
 
     # Return lightweight metadata suitable for an Airflow XCom value.
     return {
-        "symbols_requested": len(symbols),
+        "symbols_requested": len(request.symbols),
         "rows_received": len(stock_data),
         "output_path": output_path,
     }
