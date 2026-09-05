@@ -18,12 +18,9 @@
 }}
 
 
-SELECT 
-        DISTINCT
-                asset_symbol
+SELECT DISTINCT asset_symbol
 FROM
-        {{ ref('fct_open_positions') }}
+    {{ ref('fct_open_positions') }}
 WHERE
-        asset_unrealized_profit_and_loss > 0
-        AND asset_symbol IS NOT NULL
-
+    asset_unrealized_profit_and_loss > 0
+    AND asset_symbol IS NOT NULL
