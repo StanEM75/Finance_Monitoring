@@ -85,3 +85,4 @@ jobs:
       # ------------------------------------------------------------------------
       - name: Run dbt unit tests
         run: dbt test --select resource_type:unit_test
+        
