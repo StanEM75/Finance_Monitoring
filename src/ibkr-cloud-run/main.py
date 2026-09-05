@@ -12,6 +12,7 @@ Scheduler triggers the pipeline through the ``/run`` endpoint.
 import os
 import time
 import xml.etree.ElementTree as ET
+from contextlib import suppress
 
 import requests
 from flask import Flask, Response, jsonify
@@ -19,7 +20,6 @@ from google.cloud import secretmanager
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaInMemoryUpload
-
 
 # ================================================================================
 #                               APPLICATION SETUP
@@ -44,8 +44,7 @@ GOOGLE_CLIENT_SECRET_SECRET = "google-client-secret"
 SLACK_WEBHOOK_URL_SECRET = "slack-webhook-url"
 
 IBKR_SEND_URL = (
-    "https://ndcdyn.interactivebrokers.com/"
-    "AccountManagement/FlexWebService/SendRequest"
+    "https://ndcdyn.interactivebrokers.com/AccountManagement/FlexWebService/SendRequest"
 )
 
 DEFAULT_IBKR_GET_URL = (
@@ -108,21 +107,16 @@ def download_ibkr_report() -> bytes:
         error_message = root.findtext("ErrorMessage")
 
         raise RuntimeError(
-            f"IBKR SendRequest a échoué : "
-            f"{error_code} - {error_message}"
+            f"IBKR SendRequest a échoué : {error_code} - {error_message}"
         )
 
     reference_code = root.findtext("ReferenceCode")
     get_statement_url = (
-        root.findtext("Url")
-        or root.findtext("url")
-        or DEFAULT_IBKR_GET_URL
+        root.findtext("Url") or root.findtext("url") or DEFAULT_IBKR_GET_URL
     )
 
     if not reference_code:
-        raise RuntimeError(
-            "IBKR n'a retourné aucun ReferenceCode."
-        )
+        raise RuntimeError("IBKR n'a retourné aucun ReferenceCode.")
 
     statement_params = {
         "t": token,
@@ -158,8 +152,7 @@ def download_ibkr_report() -> bytes:
                 continue
 
             raise RuntimeError(
-                f"IBKR GetStatement a échoué : "
-                f"{error_code} - {error_message}"
+                f"IBKR GetStatement a échoué : {error_code} - {error_message}"
             )
 
         if not content:
@@ -317,12 +310,8 @@ def run_pipeline() -> tuple[Response, int]:
     except Exception as error:
         app.logger.exception("Échec du pipeline IBKR")
 
-        try:
-            notify_slack(
-                f"❌ Échec du pipeline IBKR : {error}"
-            )
-        except Exception:
-            pass
+        with suppress(Exception):
+            notify_slack(f"❌ Échec du pipeline IBKR : {error}")
 
         return jsonify(
             {

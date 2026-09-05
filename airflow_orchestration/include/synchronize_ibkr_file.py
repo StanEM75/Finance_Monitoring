@@ -7,16 +7,14 @@ from __future__ import annotations
 import shutil
 from pathlib import Path
 
-
 # ================================================================================
 #                          SYNCHRONIZE LATEST IBKR EXTRACT
 # ================================================================================
 
+
 def synchronize_ibkr_file(
     source_path: str,
-    destination_path: str = (
-        "/usr/local/airflow/include/data/ibkr_extract.csv"
-    ),
+    destination_path: str = ("/usr/local/airflow/include/data/ibkr_extract.csv"),
 ) -> dict[str, int | str]:
     """Copy the latest mounted IBKR export into the Airflow data directory."""
 

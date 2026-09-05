@@ -3,6 +3,7 @@
 # ================================================================================
 
 from pathlib import Path
+
 import duckdb
 
 # ================================================================================
@@ -13,6 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 DB_PATH = ROOT / "warehouse" / "financial.duckdb"
 DATA_PATH = ROOT / "data"
+
 
 def load_raw_tables():
     con = duckdb.connect(str(DB_PATH))
@@ -42,6 +44,7 @@ def load_raw_tables():
     """)
 
     con.close()
+
 
 if __name__ == "__main__":
     load_raw_tables()
