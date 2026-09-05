@@ -5,7 +5,6 @@ from pathlib import Path
 import pandas as pd
 import streamlit as st
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 OUTPUT_DIRECTORY = PROJECT_ROOT / "data" / "outputs"
 OPEN_POSITIONS_PATH = OUTPUT_DIRECTORY / "open_positions.csv"
@@ -107,8 +106,7 @@ def get_symbol_history(
     start_date: pd.Timestamp,
 ) -> pd.DataFrame:
     history = prices.loc[
-        (prices[SYMBOL_COLUMN] == symbol)
-        & (prices[PRICE_DATE_COLUMN] >= start_date)
+        (prices[SYMBOL_COLUMN] == symbol) & (prices[PRICE_DATE_COLUMN] >= start_date)
     ].copy()
 
     if history.empty:
@@ -119,9 +117,7 @@ def get_symbol_history(
 
     latest_exchange = latest_row.get("stock_exchange_code")
     if pd.notna(latest_exchange):
-        same_listing = history.loc[
-            history["stock_exchange_code"] == latest_exchange
-        ]
+        same_listing = history.loc[history["stock_exchange_code"] == latest_exchange]
         if not same_listing.empty:
             history = same_listing
 
@@ -167,19 +163,13 @@ def summarize_price_history(
             else 100 * (current_price - period_low) / price_range
         )
         drawdown_from_high = (
-            100 * (current_price / period_high - 1)
-            if period_high > 0
-            else float("nan")
+            100 * (current_price / period_high - 1) if period_high > 0 else float("nan")
         )
         rebound_from_low = (
-            100 * (current_price / period_low - 1)
-            if period_low > 0
-            else float("nan")
+            100 * (current_price / period_low - 1) if period_low > 0 else float("nan")
         )
         period_return = (
-            100 * (current_price / first_price - 1)
-            if first_price > 0
-            else float("nan")
+            100 * (current_price / first_price - 1) if first_price > 0 else float("nan")
         )
 
         summaries.append(
@@ -268,14 +258,11 @@ with st.sidebar:
     )
 
 missing_files = [
-    path
-    for path in (OPEN_POSITIONS_PATH, STOCK_PRICES_PATH)
-    if not path.exists()
+    path for path in (OPEN_POSITIONS_PATH, STOCK_PRICES_PATH) if not path.exists()
 ]
 if missing_files:
     st.error(
-        "Fichier(s) introuvable(s) : "
-        + ", ".join(str(path) for path in missing_files)
+        "Fichier(s) introuvable(s) : " + ", ".join(str(path) for path in missing_files)
     )
     st.stop()
 
@@ -297,8 +284,7 @@ if positions.empty or prices.empty:
 latest_data_date = prices[PRICE_DATE_COLUMN].max()
 start_date = latest_data_date - pd.DateOffset(months=lookback_months)
 data_age_days = (
-    pd.Timestamp.now(tz="UTC").normalize()
-    - latest_data_date.normalize()
+    pd.Timestamp.now(tz="UTC").normalize() - latest_data_date.normalize()
 ).days
 
 if data_age_days > 7:

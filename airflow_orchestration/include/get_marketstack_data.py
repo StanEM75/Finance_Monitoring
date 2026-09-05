@@ -12,7 +12,6 @@ import requests
 
 
 def get_marketstack_stock_data(
-
     # ================================================================================
     #                                     CONSTANTS
     # ================================================================================
@@ -25,13 +24,13 @@ def get_marketstack_stock_data(
             "/usr/local/airflow/include/data/outputs/stocks_to_monitor.csv",
             "symbol",
         ),
-                                                    ),
+    ),
     output_path: str = "/usr/local/airflow/include/data/stock_data.csv",
     api_url: str = "https://api.marketstack.com/v2/eod",
     api_key_variable: str = "API_KEY",
     limit: int = 10_000,
     lookback_months: int = 12,
-                                ) -> dict:
+) -> dict:
 
     # ================================================================================
     #                              LOAD STOCK SYMBOLS
@@ -45,9 +44,7 @@ def get_marketstack_stock_data(
             path = Path(file_path)
 
             if not path.exists():
-                raise FileNotFoundError(
-                    f"Le fichier de symboles n'existe pas : {path}"
-                )
+                raise FileNotFoundError(f"Le fichier de symboles n'existe pas : {path}")
 
             dataframe = pd.read_csv(path)
 
@@ -59,11 +56,7 @@ def get_marketstack_stock_data(
                 )
 
             symbols = (
-                dataframe[symbol_column]
-                .dropna()
-                .astype(str)
-                .str.strip()
-                .str.upper()
+                dataframe[symbol_column].dropna().astype(str).str.strip().str.upper()
             )
 
             symbol_frames.append(symbols)
@@ -74,11 +67,7 @@ def get_marketstack_stock_data(
             ignore_index=True,
         )
 
-        return sorted(
-            symbol
-            for symbol in all_symbols.unique().tolist()
-            if symbol
-        )
+        return sorted(symbol for symbol in all_symbols.unique().tolist() if symbol)
 
     # ================================================================================
     #                                       API CALL
@@ -94,9 +83,9 @@ def get_marketstack_stock_data(
             "access_key": api_key,
             "symbols": ",".join(symbols),
             "limit": limit,
-            "date_from": (
-                today - pd.DateOffset(months=lookback_months)
-            ).date().isoformat(),
+            "date_from": (today - pd.DateOffset(months=lookback_months))
+            .date()
+            .isoformat(),
             "date_to": today.date().isoformat(),
         }
 
@@ -109,9 +98,7 @@ def get_marketstack_stock_data(
             )
             response.raise_for_status()
         except requests.RequestException as error:
-            raise RuntimeError(
-                f"Échec de l'appel Marketstack : {error}"
-            ) from error
+            raise RuntimeError(f"Échec de l'appel Marketstack : {error}") from error
 
         payload = response.json()
 
@@ -122,18 +109,12 @@ def get_marketstack_stock_data(
             if isinstance(api_error, dict):
                 message = api_error.get("message", str(api_error))
                 code = api_error.get("code", "unknown")
-                raise RuntimeError(
-                    f"Erreur Marketstack {code} : {message}"
-                )
+                raise RuntimeError(f"Erreur Marketstack {code} : {message}")
 
-            raise RuntimeError(
-                f"Erreur Marketstack : {api_error}"
-            )
+            raise RuntimeError(f"Erreur Marketstack : {api_error}")
 
         if "data" not in payload:
-            raise ValueError(
-                "La réponse Marketstack ne contient pas de champ 'data'."
-            )
+            raise ValueError("La réponse Marketstack ne contient pas de champ 'data'.")
 
         return payload
 
@@ -156,9 +137,7 @@ def get_marketstack_stock_data(
             )
 
         deduplication_columns = [
-            column
-            for column in ("symbol", "date")
-            if column in dataframe.columns
+            column for column in ("symbol", "date") if column in dataframe.columns
         ]
 
         if deduplication_columns:
@@ -197,25 +176,20 @@ def get_marketstack_stock_data(
 
     if not api_key:
         raise ValueError(
-            f"La variable d'environnement {api_key_variable} "
-            "n'est pas définie."
+            f"La variable d'environnement {api_key_variable} n'est pas définie."
         )
 
     symbols = load_symbols()
 
     if not symbols:
-        raise ValueError(
-            "Aucun symbole valide n'a été trouvé dans les CSV."
-        )
+        raise ValueError("Aucun symbole valide n'a été trouvé dans les CSV.")
 
     # Fetch, transform and persist the complete price history.
     payload = call_marketstack(symbols, api_key)
     stock_data = transform_response(payload)
 
     if stock_data.empty:
-        raise ValueError(
-            "Marketstack n'a retourné aucune donnée."
-        )
+        raise ValueError("Marketstack n'a retourné aucune donnée.")
 
     save_dataframe(stock_data)
 

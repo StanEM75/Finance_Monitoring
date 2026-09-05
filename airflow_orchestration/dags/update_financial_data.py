@@ -3,35 +3,32 @@
 # ================================================================================
 
 # Mandatory imports for Airflow DAGs to work properly
-from airflow.sdk import dag, task
-from pendulum import datetime
-
-# Slack notification callback
-from airflow.providers.http.notifications.http import send_http_notification
-
 # To import environment variables from the .env file
 import os
-
 from datetime import timedelta
+
+# HTTP notification callback
+from airflow.providers.http.notifications.http import send_http_notification
 
 # To execute Bash commands for dbt transformations
 from airflow.providers.standard.operators.bash import BashOperator
-
-# ================================================================================
-#                              PROJECT FUNCTIONS
-# ================================================================================
-
-# Import the function used to retrieve Marketstack stock data
-from include.get_marketstack_data import get_marketstack_stock_data
-
-# Import the function used to synchronize the latest IBKR extract
-from include.synchronize_ibkr_file import synchronize_ibkr_file
+from airflow.sdk import dag, task
 
 # Import the function used to extract IBKR data into separate tables
 from include.extract_ibkr_data import extract_ibkr_data
 
+# ================================================================================
+#                              PROJECT FUNCTIONS
+# ================================================================================
+# Import the function used to retrieve Marketstack stock data
+from include.get_marketstack_data import get_marketstack_stock_data
+
 # Import the function used to load table data into DuckDB
 from include.load_to_duckdb import load_to_duckdb
+
+# Import the function used to synchronize the latest IBKR extract
+from include.synchronize_ibkr_file import synchronize_ibkr_file
+from pendulum import datetime
 
 # ================================================================================
 #                              NTFY NOTIFICATIONS
@@ -100,11 +97,12 @@ def update_financial_data():
     #                                  TASKS
     # ============================================================================
 
-    @task(task_id="get_marketstack_data",
-            retries=3,
-            retry_delay=timedelta(minutes=2),
-            retry_exponential_backoff=True,
-            max_retry_delay=timedelta(minutes=10)
+    @task(
+        task_id="get_marketstack_data",
+        retries=3,
+        retry_delay=timedelta(minutes=2),
+        retry_exponential_backoff=True,
+        max_retry_delay=timedelta(minutes=10),
     )
     def get_marketstack_data_task() -> dict:
         return get_marketstack_stock_data()
@@ -112,15 +110,9 @@ def update_financial_data():
     @task(task_id="synchronize_ibkr_file")
     def get_latest_ibkr_file() -> dict:
         return synchronize_ibkr_file(
-        source_path=(
-            "/usr/local/airflow/ibkr-drive/"
-            "ibkr_extract.csv"
-        ),
-        destination_path=(
-            "/usr/local/airflow/include/data/"
-            "ibkr_extract.csv"
+            source_path=("/usr/local/airflow/ibkr-drive/ibkr_extract.csv"),
+            destination_path=("/usr/local/airflow/include/data/ibkr_extract.csv"),
         )
-                                    )
 
     @task(task_id="extract_ibkr_data")
     def move_ibkr_data_to_tables() -> None:
@@ -144,9 +136,7 @@ def update_financial_data():
             --target dev
         """,
         env={
-            "DBT_OUTPUT_DIR": (
-                "/usr/local/airflow/include/data/outputs"
-            ),
+            "DBT_OUTPUT_DIR": ("/usr/local/airflow/include/data/outputs"),
         },
         append_env=True,
     )
@@ -160,7 +150,13 @@ def update_financial_data():
     ibkr_extract_task = move_ibkr_data_to_tables()
     duckdb_load_task = update_duckdb()
 
-    marketstack_task >> ibkr_sync_task >> ibkr_extract_task >> duckdb_load_task >> dbt_build_task
+    (
+        marketstack_task
+        >> ibkr_sync_task
+        >> ibkr_extract_task
+        >> duckdb_load_task
+        >> dbt_build_task
+    )
 
 
 update_financial_data()

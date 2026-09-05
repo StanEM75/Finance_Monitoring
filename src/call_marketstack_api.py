@@ -2,12 +2,17 @@
 #                                     PACKAGES
 # ================================================================================
 
-import requests # For API calls
-import os # For environment variables
-from dotenv import load_dotenv # To load .env file
-import pandas as pd # For data manipulation and converting JSON to DataFrame
-from pydantic import BaseModel, HttpUrl, field_validator # For detailed type validation and parsing
+import os  # For environment variables
 from typing import Any
+
+import pandas as pd  # For data manipulation and converting JSON to DataFrame
+import requests  # For API calls
+from dotenv import load_dotenv  # To load .env file
+from pydantic import (  # For detailed type validation and parsing
+    BaseModel,
+    HttpUrl,
+    field_validator,
+)
 
 today = pd.Timestamp.now(tz="UTC")
 
@@ -15,7 +20,7 @@ today = pd.Timestamp.now(tz="UTC")
 #                            GET CREDENTIALS AND API URL
 # ================================================================================
 
-# Load environment variables from .env file | We have previously set up the .env file with our API key to avoid printing it 
+# Load the API key from .env without exposing it in the source code.
 load_dotenv()
 
 # URL for the Marketstack API endpoint (endpoint is directly included within the URL)
@@ -28,22 +33,22 @@ api_key = os.getenv("API_KEY")
 #                       CREATE A LIST OF STOCK SYMBOLS TO MONITOR
 # ================================================================================
 
-# Retrieve the current positions in the portfolio (only current positions are interesting to get data for)
-df1 = pd.read_csv('../data/outputs/stocks_to_pick_dev.csv')
+# Retrieve current portfolio positions.
+df1 = pd.read_csv("../data/outputs/stocks_to_pick_dev.csv")
 
-# Rename the column 'asset_symbol' to 'symbol' to merge on a common column with the second dataframe later on
-df1 = df1.rename(columns={'asset_symbol': 'symbol'})
+# Use a common symbol column before merging both dataframes.
+df1 = df1.rename(columns={"asset_symbol": "symbol"})
 
-# Retrieve the list of symbols not owned today but that could be interesting in the future
-df2 = pd.read_csv('../data/outputs/stocks_to_monitor_dev.csv')
+# Retrieve symbols that could be monitored in the future.
+df2 = pd.read_csv("../data/outputs/stocks_to_monitor_dev.csv")
 
 df = pd.concat([df1, df2], ignore_index=True)
 
 # Create a list of symbols, representing the list of stocks we want to get data for
-symbols = df['symbol'].unique().tolist()
+symbols = df["symbol"].unique().tolist()
 
 # ================================================================================
-#                                API CALL PARAMETERS 
+#                                API CALL PARAMETERS
 # ================================================================================
 
 # Parameters for the API call: API key, stocks symbols, and limit of records to fetch
@@ -54,11 +59,10 @@ params = {
     "symbols": ",".join(symbols),
     # Limit the number of records returned to 10000 (The limit)
     "limit": 10000,
-    "date_from": (
-        today - pd.DateOffset(months=12)
-    ).date().isoformat(),
+    "date_from": (today - pd.DateOffset(months=12)).date().isoformat(),
     "date_to": today.date().isoformat(),
 }
+
 
 # ================================================================================
 #                                VALIDATE DATA AND CONFIGURATION
@@ -77,20 +81,28 @@ class MarketstackConfig(BaseModel):
     @field_validator("params")
     @classmethod
     def validate_params(
-                            cls,
-                            params: dict[str, Any],
-                        ) -> dict[str, Any]:
+        cls,
+        params: dict[str, Any],
+    ) -> dict[str, Any]:
         if "access_key" not in params or not params["access_key"]:
-            raise ValueError("The 'access_key' parameter is required and cannot be empty.")
+            raise ValueError(
+                "The 'access_key' parameter is required and cannot be empty."
+            )
         if "symbols" not in params or not params["symbols"]:
             raise ValueError("The 'symbols' parameter is required and cannot be empty.")
-        if "limit" not in params or not isinstance(params["limit"], int) or params["limit"] <= 0:
+        if (
+            "limit" not in params
+            or not isinstance(params["limit"], int)
+            or params["limit"] <= 0
+        ):
             raise ValueError("The 'limit' parameter must be a positive integer.")
         return params
+
 
 # ================================================================================
 #                                FUNCTION TO GET DATA
 # ================================================================================
+
 
 # Define a function to call the API and handle potential errors
 def get_stock_data(
@@ -99,10 +111,10 @@ def get_stock_data(
     try:
         # Get a response from the API
         response = requests.get(
-                    str(config.url),
-                    params=config.params,
-                    timeout=(10, 120),
-                                )
+            str(config.url),
+            params=config.params,
+            timeout=(10, 120),
+        )
         # Raise the status of the call: success or error
         response.raise_for_status()
     # Handle request exceptions
@@ -115,24 +127,19 @@ def get_stock_data(
             "Marketstack n'a pas répondu dans les 120 secondes."
         ) from error
     except requests.exceptions.RequestException as error:
-        raise RuntimeError(
-            f"Erreur lors de l'appel Marketstack : {error}"
-        ) from error
+        raise RuntimeError(f"Erreur lors de l'appel Marketstack : {error}") from error
 
     # Get the result of the call through JSON format
     payload = response.json()
 
     if "error" in payload:
-        raise RuntimeError(
-            f"Erreur renvoyée par Marketstack : {payload['error']}"
-        )
+        raise RuntimeError(f"Erreur renvoyée par Marketstack : {payload['error']}")
 
     if "data" not in payload:
-        raise ValueError(
-            "La réponse Marketstack ne contient pas de champ 'data'."
-        )
+        raise ValueError("La réponse Marketstack ne contient pas de champ 'data'.")
 
     return payload
+
 
 # Call the function to call the API and get stock data required
 data = get_stock_data(MarketstackConfig(url=url, params=params))
