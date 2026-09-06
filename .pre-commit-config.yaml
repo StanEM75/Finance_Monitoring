@@ -14,3 +14,17 @@ repos:
         language: system
         types:
           - yaml
+
+      - id: ruff
+        name: ruff
+        entry: ruff check
+        language: system
+        types:
+          - python
+
+      - id: sqlfluff
+        name: sqlfluff
+        entry: env DBT_OUTPUT_DIR=/tmp/dbt_outputs sqlfluff lint
+        language: system
+        types:
+          - sql

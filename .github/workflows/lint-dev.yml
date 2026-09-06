@@ -91,4 +91,8 @@ jobs:
 
       - name: Run sqlfluff
         working-directory: ${{ github.workspace }}
-        run: sqlfluff lint transformation_of_all_data/models
+        env:
+          DBT_OUTPUT_DIR: /tmp/dbt_outputs
+        run: |
+          mkdir -p "$DBT_OUTPUT_DIR"
+          sqlfluff lint transformation_of_all_data/models --processes 1
