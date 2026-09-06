@@ -9,7 +9,6 @@ from pathlib import Path
 
 import pandas as pd
 import requests
-
 from pydantic import BaseModel, HttpUrl, PositiveInt, field_validator
 
 
@@ -32,9 +31,7 @@ class MarketstackConfig(BaseModel):
         value = value.strip()
 
         if not value:
-            raise ValueError(
-                "The 'api_key_variable' parameter cannot be empty."
-            )
+            raise ValueError("The 'api_key_variable' parameter cannot be empty.")
 
         return value
 
@@ -46,17 +43,11 @@ class MarketstackRequest(BaseModel):
     @classmethod
     def validate_symbols(cls, symbols: list[str]) -> list[str]:
         cleaned_symbols = sorted(
-            {
-                symbol.strip().upper()
-                for symbol in symbols
-                if symbol and symbol.strip()
-            }
+            {symbol.strip().upper() for symbol in symbols if symbol and symbol.strip()}
         )
 
         if not cleaned_symbols:
-            raise ValueError(
-                "At least one stock symbol is required."
-            )
+            raise ValueError("At least one stock symbol is required.")
 
         return cleaned_symbols
 
@@ -140,8 +131,8 @@ def get_marketstack_stock_data(
         params = {
             "access_key": api_key,
             "symbols": ",".join(symbols),
-            "limit": limit,
-            "date_from": (today - pd.DateOffset(months=lookback_months))
+            "limit": config.limit,
+            "date_from": (today - pd.DateOffset(months=config.lookback_months))
             .date()
             .isoformat(),
             "date_to": today.date().isoformat(),
@@ -234,13 +225,12 @@ def get_marketstack_stock_data(
 
     if not api_key:
         raise ValueError(
-            f"La variable d'environnement {api_key_variable} n'est pas définie."
+            f"La variable d'environnement {config.api_key_variable} n'est pas définie."
         )
 
-    symbols = load_symbols()
-
-    if not symbols:
-        raise ValueError("Aucun symbole valide n'a été trouvé dans les CSV.")
+    request = MarketstackRequest(
+        symbols=load_symbols(),
+    )
 
     # Fetch, transform and persist the complete price history.
     payload = call_marketstack(request.symbols, api_key)
