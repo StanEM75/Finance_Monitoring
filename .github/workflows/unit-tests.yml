@@ -29,6 +29,11 @@ jobs:
   unit-tests:
     runs-on: ubuntu-latest
 
+    # dbt compiles the models' post-hooks during parse and unit tests.
+    # Use a temporary CI directory instead of a local or production path.
+    env:
+      DBT_OUTPUT_DIR: /tmp/dbt_outputs
+
     defaults:
       run:
         working-directory: transformation_of_all_data
@@ -61,6 +66,7 @@ jobs:
       - name: Write ephemeral dbt profile
         run: |
           mkdir -p ~/.dbt
+          mkdir -p "$DBT_OUTPUT_DIR"
           cat > ~/.dbt/profiles.yml <<'EOF'
           transformation_of_all_data:
             target: ci
