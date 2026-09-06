@@ -10,31 +10,31 @@
 -- Import data from the raw_performance_data table to check profit and loss for assets sold in the past and for assets still held in the portfolio
 -- ===================================================================================================================================================
 
-SELECT 
-        -- Client information
-        ClientAccountID AS client_account_id,
+SELECT
+    -- Client information
+    CLIENTACCOUNTID AS CLIENT_ACCOUNT_ID,
 
-        -- Asset identifiers 
-        Conid AS asset_contract_id,
-        ISIN AS asset_international_security_identification_number,
-        AssetClass AS asset_class,
-        Symbol AS asset_symbol,
-        Description AS asset_full_name,
+    -- Asset identifiers
+    CONID AS ASSET_CONTRACT_ID,
+    ISIN AS ASSET_INTERNATIONAL_SECURITY_IDENTIFICATION_NUMBER,
+    ASSETCLASS AS ASSET_CLASS,
+    SYMBOL AS ASSET_SYMBOL,
+    DESCRIPTION AS ASSET_FULL_NAME,
 
-        -- Asset trading information
-        ListingExchange AS asset_trading_place,
-        Multiplier AS asset_multiplier,
-        CostAdjustment AS asset_cost_adjustment,
+    -- Asset trading information
+    LISTINGEXCHANGE AS ASSET_TRADING_PLACE,
+    MULTIPLIER AS ASSET_MULTIPLIER,
+    COSTADJUSTMENT AS ASSET_COST_ADJUSTMENT,
 
-        -- Asset performance information
-        TotalRealizedPnl AS asset_total_realized_profit_and_loss,
-        TotalUnrealizedPnl AS asset_total_unrealized_profit_and_loss,
-        TotalFifoPnl AS asset_total_fifo_method_profit_and_loss,
-        TransferredPnl AS asset_transferred_profit_and_loss,
+    -- Asset performance information
+    TOTALREALIZEDPNL AS ASSET_TOTAL_REALIZED_PROFIT_AND_LOSS,
+    TOTALUNREALIZEDPNL AS ASSET_TOTAL_UNREALIZED_PROFIT_AND_LOSS,
+    TOTALFIFOPNL AS ASSET_TOTAL_FIFO_METHOD_PROFIT_AND_LOSS,
+    TRANSFERREDPNL AS ASSET_TRANSFERRED_PROFIT_AND_LOSS,
 
-        -- Date of the record in the source table
-        ReportDate AS row_record_date
-FROM 
-        {{ source('raw', 'raw_performance_data') }}
-WHERE 
-        Symbol IS NOT NULL
+    -- Date of the record in the source table
+    REPORTDATE AS ROW_RECORD_DATE
+FROM
+    {{ source('raw', 'raw_performance_data') }}
+WHERE
+    SYMBOL IS NOT NULL
