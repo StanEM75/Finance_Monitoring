@@ -10,13 +10,13 @@
 -- Import data from the raw_statement_data table to keep only the document_generation_timestamp later on
 -- ================================================================================================================
 
-SELECT 
-        -- Client information
-        ClientAccountID AS client_account_id,
-        AccountAlias AS client_account_alias,
-        CurrencyPrimary AS client_account_primary_currency,
-        AccountType AS client_account_type,
-        IBEntity AS client_account_ib_entity,
-        TaxLotMatchingMethod AS client_account_tax_lot_matching_method,
+SELECT
+    -- Client information
+    CLIENTACCOUNTID AS CLIENT_ACCOUNT_ID,
+    ACCOUNTALIAS AS CLIENT_ACCOUNT_ALIAS,
+    CURRENCYPRIMARY AS CLIENT_ACCOUNT_PRIMARY_CURRENCY,
+    ACCOUNTTYPE AS CLIENT_ACCOUNT_TYPE,
+    IBENTITY AS CLIENT_ACCOUNT_IB_ENTITY,
+    TAXLOTMATCHINGMETHOD AS CLIENT_ACCOUNT_TAX_LOT_MATCHING_METHOD
 FROM
-        {{ source('raw', 'raw_statement_data') }}
+    {{ source('raw', 'raw_statement_data') }}

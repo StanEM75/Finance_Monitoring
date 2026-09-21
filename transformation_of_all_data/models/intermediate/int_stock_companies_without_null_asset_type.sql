@@ -6,26 +6,24 @@
     )
 }}
 
-WITH rows_with_null_asset_type AS 
-(
-    SELECT 
+WITH rows_with_null_asset_type AS (
+    SELECT
         record_date,
         symbol,
         asset_type
-    FROM 
+    FROM
         {{ ref('int_stock') }}
-    WHERE 
-        asset_type IS  NULL
+    WHERE
+        asset_type IS NULL
 )
 
-SELECT 
-        DISTINCT
-                int_stock.symbol,
-                int_stock.asset_type
-FROM 
-        {{ ref('int_stock') }} int_stock
+SELECT DISTINCT
+    int_stock.symbol,
+    int_stock.asset_type
+FROM
+    {{ ref('int_stock') }} AS int_stock
 INNER JOIN
-        rows_with_null_asset_type AS rows_with_null_asset_type
-        ON int_stock.symbol = rows_with_null_asset_type.symbol
-WHERE 
-        int_stock.asset_type IS NOT NULL
+    rows_with_null_asset_type AS rows_with_null_asset_type
+    ON int_stock.symbol = rows_with_null_asset_type.symbol
+WHERE
+    int_stock.asset_type IS NOT NULL

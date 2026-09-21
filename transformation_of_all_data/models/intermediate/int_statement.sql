@@ -13,7 +13,7 @@
 -- Only keep document_generation_timestamp as it is the only information we want for our DAG
 -- ===============================================================================================================
 
-SELECT 
+SELECT
         document_generation_timestamp
 FROM
         {{ ref('stg_statement') }}

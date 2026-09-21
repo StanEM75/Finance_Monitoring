@@ -7,7 +7,7 @@
 }}
 
 -- ===============================================================================================================
--- Select only the relevant columns: 
+-- Select only the relevant columns:
 -- 1. Exclude client information, which is useless for the analysis (only 1 client=me).
 -- 2. Exclude all identifiers except asset_symbol because the other ones would be useful only if two stock can
 -- share the same symbol, which is not the case in our dataset.
@@ -16,13 +16,13 @@
 -- 5. Exclude row_record_date because it is only useful for freshness test.
 -- ===============================================================================================================
 
-SELECT 
-        -- Asset identifier
-        asset_symbol,
+SELECT
+    -- Asset identifier
+    asset_symbol,
 
-        -- Asset performance information
-        asset_total_realized_profit_and_loss,
-        asset_total_unrealized_profit_and_loss,
-        asset_total_fifo_method_profit_and_loss
+    -- Asset performance information
+    asset_total_realized_profit_and_loss,
+    asset_total_unrealized_profit_and_loss,
+    asset_total_fifo_method_profit_and_loss
 FROM
-        {{ ref('stg_performance') }}
+    {{ ref('stg_performance') }}

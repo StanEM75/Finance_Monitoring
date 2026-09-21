@@ -18,16 +18,16 @@
 }}
 
 SELECT
-        -- Asset identifier
-        asset_symbol,
-        
-        -- Stock prices information
-        asset_open_price,
-        asset_close_price,
-        asset_low_price,
-        asset_high_price,
+    -- Asset identifier
+    asset_symbol,
 
-        -- Transform date to keep only the date part as we don't need the time part for our analysis
-        record_date
-FROM 
-        {{ ref('int_stock') }}
+    -- Stock prices information
+    asset_open_price,
+    asset_close_price,
+    asset_low_price,
+    asset_high_price,
+
+    -- Transform date to keep only the date part as we don't need the time part for our analysis
+    record_date
+FROM
+    {{ ref('int_stock') }}

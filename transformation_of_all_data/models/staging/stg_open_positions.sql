@@ -10,30 +10,30 @@
 -- Import data from the raw_open_positions_data table to monitor positions currently held in the portfolio
 -- ================================================================================================================
 
-SELECT 
-        -- Client information
-        ClientAccountID AS client_account_id,
+SELECT
+    -- Client information
+    CLIENTACCOUNTID AS CLIENT_ACCOUNT_ID,
 
-        -- Asset identifiers 
-        Conid AS asset_contract_id,
-        AssetClass AS asset_class,
-        Symbol AS asset_symbol,
-        Description AS asset_full_name,
+    -- Asset identifiers
+    CONID AS ASSET_CONTRACT_ID,
+    ASSETCLASS AS ASSET_CLASS,
+    SYMBOL AS ASSET_SYMBOL,
+    DESCRIPTION AS ASSET_FULL_NAME,
 
-        -- Asset trading information
-        ListingExchange AS asset_trading_place,
-        CurrencyPrimary AS asset_currency_used_for_trading,
-        Multiplier AS asset_multiplier,
-        Quantity AS asset_quantity_held,
+    -- Asset trading information
+    LISTINGEXCHANGE AS ASSET_TRADING_PLACE,
+    CURRENCYPRIMARY AS ASSET_CURRENCY_USED_FOR_TRADING,
+    MULTIPLIER AS ASSET_MULTIPLIER,
+    QUANTITY AS ASSET_QUANTITY_HELD,
 
-        -- Asset performance information
-        MarkPrice AS asset_current_value_of_one_unit,
-        PositionValue AS asset_current_position_value,
-        CostBasisPrice AS asset_cost_of_one_unit,
-        CostBasisMoney AS asset_total_cost_of_the_position,
-        FifoPnlUnrealized AS asset_unrealized_profit_and_loss,
+    -- Asset performance information
+    MARKPRICE AS ASSET_CURRENT_VALUE_OF_ONE_UNIT,
+    POSITIONVALUE AS ASSET_CURRENT_POSITION_VALUE,
+    COSTBASISPRICE AS ASSET_COST_OF_ONE_UNIT,
+    COSTBASISMONEY AS ASSET_TOTAL_COST_OF_THE_POSITION,
+    FIFOPNLUNREALIZED AS ASSET_UNREALIZED_PROFIT_AND_LOSS,
 
-        -- Date of the record in the source table
-        Side AS asset_position_type
-FROM 
-        {{ source('raw', 'raw_open_positions_data') }}
+    -- Date of the record in the source table
+    SIDE AS ASSET_POSITION_TYPE
+FROM
+    {{ source('raw', 'raw_open_positions_data') }}
