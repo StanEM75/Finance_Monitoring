@@ -12,6 +12,32 @@ import requests
 from pydantic import BaseModel, HttpUrl, PositiveInt, field_validator
 
 
+def normalize_column_names(
+    dataframe: pd.DataFrame,
+    source_path: Path,
+) -> pd.DataFrame:
+    """Return a dataframe whose column names use stripped lowercase names."""
+    normalized_columns = [str(column).strip().lower() for column in dataframe.columns]
+
+    duplicated_columns = sorted(
+        {
+            column
+            for column in normalized_columns
+            if normalized_columns.count(column) > 1
+        }
+    )
+    if duplicated_columns:
+        duplicates = ", ".join(duplicated_columns)
+        raise ValueError(
+            f"Les colonnes de {source_path} deviennent ambiguës après "
+            f"normalisation : {duplicates}"
+        )
+
+    normalized_dataframe = dataframe.copy()
+    normalized_dataframe.columns = normalized_columns
+    return normalized_dataframe
+
+
 class MarketstackConfig(BaseModel):
     api_url: HttpUrl
     api_key_variable: str
@@ -95,17 +121,26 @@ def get_marketstack_stock_data(
             if not path.exists():
                 raise FileNotFoundError(f"Le fichier de symboles n'existe pas : {path}")
 
-            dataframe = pd.read_csv(path)
+            dataframe = normalize_column_names(
+                pd.read_csv(path),
+                path,
+            )
+            normalized_symbol_column = symbol_column.strip().lower()
 
-            # Fail with an explicit message if an upstream CSV changed schema.
-            if symbol_column not in dataframe.columns:
+            # Column lookup is case-insensitive because dbt and CSV writers may
+            # preserve identifier casing differently.
+            if normalized_symbol_column not in dataframe.columns:
                 raise ValueError(
                     f"La colonne '{symbol_column}' est absente de {path}. "
                     f"Colonnes disponibles : {dataframe.columns.tolist()}"
                 )
 
             symbols = (
-                dataframe[symbol_column].dropna().astype(str).str.strip().str.upper()
+                dataframe[normalized_symbol_column]
+                .dropna()
+                .astype(str)
+                .str.strip()
+                .str.upper()
             )
 
             symbol_frames.append(symbols)
