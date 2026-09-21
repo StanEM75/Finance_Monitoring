@@ -111,9 +111,8 @@ def download_ibkr_report() -> bytes:
         )
 
     reference_code = root.findtext("ReferenceCode")
-    get_statement_url = (
-        root.findtext("Url") or root.findtext("url") or DEFAULT_IBKR_GET_URL
-    )
+    # IBKR may return the obsolete gdcdyn host, which no longer resolves.
+    get_statement_url = DEFAULT_IBKR_GET_URL
 
     if not reference_code:
         raise RuntimeError("IBKR n'a retourné aucun ReferenceCode.")
@@ -185,7 +184,6 @@ def get_google_credentials() -> Credentials:
         client_secret=get_secret(GOOGLE_CLIENT_SECRET_SECRET),
         scopes=[
             "https://www.googleapis.com/auth/drive.file",
-            "https://www.googleapis.com/auth/spreadsheets",
         ],
     )
 
