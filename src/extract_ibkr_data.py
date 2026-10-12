@@ -4,6 +4,7 @@
 import csv
 import logging
 from collections import defaultdict
+from pathlib import Path
 
 import pandas as pd
 
@@ -53,7 +54,8 @@ def parse_ibkr_report(path: str) -> dict[str, pd.DataFrame]:
     # Convert the sections and their corresponding rows into pandas DataFrames
 
     # Navigate through each section and its corresponding rows
-    for section, rows in sections.items():
+    for section in headers.keys() | sections.keys():
+        rows = sections.get(section, [])
         # Columns in a DataFrame = Headers in section
         columns = headers.get(section)
 
@@ -75,7 +77,8 @@ def parse_ibkr_report(path: str) -> dict[str, pd.DataFrame]:
 # ================================================================================
 
 # Apply the parsing function to the IBKR report CSV file
-tables = parse_ibkr_report("../data/ibkr_extract.csv")
+DATA_PATH = Path(__file__).resolve().parents[1] / "data"
+tables = parse_ibkr_report(str(DATA_PATH / "ibkr_extract.csv"))
 
 
 # ================================================================================
@@ -115,6 +118,7 @@ logging.info(
 performance = tables["FIFO"]
 
 open_positions = tables["POST"]
+transactions = tables["TRNT"]
 
 # ================================================================================
 #                                       EXPORT DATA
@@ -122,7 +126,7 @@ open_positions = tables["POST"]
 
 # A table to extract the date of generation of the report
 statement.to_csv(
-    "/Users/stanislas/Projets/Business/financial-api/data/df_statement.csv",
+    DATA_PATH / "df_statement.csv",
     index=False,
 )
 
@@ -133,7 +137,7 @@ logging.info(
 
 # Export the performance summary for open and closed positions.
 performance.to_csv(
-    "/Users/stanislas/Projets/Business/financial-api/data/df_performance.csv",
+    DATA_PATH / "df_performance.csv",
     index=False,
 )
 
@@ -144,7 +148,7 @@ logging.info(
 
 # Export open positions with their quantity, price, value, and unrealized P&L.
 open_positions.to_csv(
-    "/Users/stanislas/Projets/Business/financial-api/data/df_open_positions.csv",
+    DATA_PATH / "df_open_positions.csv",
     index=False,
 )
 
@@ -152,3 +156,7 @@ logging.info(
     f"Open positions table exported successfully. Contains {len(open_positions)} rows "
     f"and {len(open_positions.columns)} columns."
 )
+
+# Export individual purchases and sales.
+transactions.to_csv(DATA_PATH / "df_transactions.csv", index=False)
+logging.info("Exported %d transactions.", len(transactions))

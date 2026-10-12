@@ -1,50 +1,20 @@
-# ================================================================================
-#                                     PACKAGES
-# ================================================================================
+"""Load local CSVs using the same transactional loader as Airflow."""
 
 from pathlib import Path
-
-import duckdb
-
-# ================================================================================
-#                                INSTANTIATE THE PATH
-# ================================================================================
+import sys
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+
+from airflow_orchestration.include.load_to_duckdb import load_to_duckdb
 
 DB_PATH = ROOT / "warehouse" / "financial.duckdb"
 DATA_PATH = ROOT / "data"
 
 
 def load_raw_tables():
-    con = duckdb.connect(str(DB_PATH))
-
-    con.execute(f"""
-        CREATE OR REPLACE TABLE raw_stock_data AS
-        SELECT *
-        FROM read_csv_auto('{DATA_PATH / "stock_data.csv"}', HEADER=TRUE)
-    """)
-
-    con.execute(f"""
-        CREATE OR REPLACE TABLE raw_statement_data AS
-        SELECT *
-        FROM read_csv_auto('{DATA_PATH / "df_statement.csv"}', HEADER=TRUE)
-    """)
-
-    con.execute(f"""
-        CREATE OR REPLACE TABLE raw_open_positions_data AS
-        SELECT *
-        FROM read_csv_auto('{DATA_PATH / "df_open_positions.csv"}', HEADER=TRUE)
-    """)
-
-    con.execute(f"""
-        CREATE OR REPLACE TABLE raw_performance_data AS
-        SELECT *
-        FROM read_csv_auto('{DATA_PATH / "df_performance.csv"}', HEADER=TRUE)
-    """)
-
-    con.close()
+    return load_to_duckdb(str(DB_PATH), str(DATA_PATH))
 
 
 if __name__ == "__main__":
-    load_raw_tables()
+    print(load_raw_tables())

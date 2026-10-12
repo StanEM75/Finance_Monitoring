@@ -34,6 +34,7 @@ def require_columns(
     required_columns: set[str],
     source_path: Path,
 ) -> None:
+    dataframe.columns = dataframe.columns.str.lower()
     missing_columns = required_columns - set(dataframe.columns)
     if missing_columns:
         missing = ", ".join(sorted(missing_columns))
