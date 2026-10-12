@@ -48,7 +48,8 @@ def extract_ibkr_data(
 
         # Build a DataFrame only after checking each row against its header.
         tables: dict[str, pd.DataFrame] = {}
-        for section, rows in sections.items():
+        for section in headers.keys() | sections.keys():
+            rows = sections.get(section, [])
             columns = headers.get(section)
             if columns is None:
                 raise ValueError(
@@ -87,9 +88,9 @@ def extract_ibkr_data(
     if not source.is_file():
         raise FileNotFoundError(f"IBKR extract not found: {source}")
 
-    # Keep only the account, performance and open-position sections.
+    # Keep account, performance, open positions and individual transactions.
     tables = parse_report(source)
-    required_sections = {"ACCT", "FIFO", "POST"}
+    required_sections = {"ACCT", "FIFO", "POST", "TRNT"}
     missing_sections = required_sections - tables.keys()
     if missing_sections:
         missing = ", ".join(sorted(missing_sections))
@@ -100,11 +101,13 @@ def extract_ibkr_data(
         "statement": tables["ACCT"],
         "performance": tables["FIFO"],
         "open_positions": tables["POST"],
+        "transactions": tables["TRNT"],
     }
     filenames = {
         "statement": "df_statement.csv",
         "performance": "df_performance.csv",
         "open_positions": "df_open_positions.csv",
+        "transactions": "df_transactions.csv",
     }
 
     # ============================================================================
@@ -128,4 +131,5 @@ def extract_ibkr_data(
         "statement_rows": len(outputs["statement"]),
         "performance_rows": len(outputs["performance"]),
         "open_position_rows": len(outputs["open_positions"]),
+        "transaction_rows": len(outputs["transactions"]),
     }
