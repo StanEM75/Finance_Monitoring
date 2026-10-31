@@ -16,6 +16,7 @@ from airflow.sdk import dag, task
 
 # Import the function used to extract IBKR data into separate tables
 from include.extract_ibkr_data import extract_ibkr_data
+from include.get_fmp_data import get_fmp_data
 
 # ================================================================================
 #                              PROJECT FUNCTIONS
@@ -72,7 +73,7 @@ DAG_FAILURE_NOTIFICATION = send_http_notification(
 
 @dag(
     dag_id="update_financial_data",
-    description="Daily Marketstack and IBKR financial data pipeline",
+    description="Daily Marketstack, IBKR and FMP earnings data pipeline",
     start_date=datetime(
         2026,
         7,
@@ -89,8 +90,7 @@ DAG_FAILURE_NOTIFICATION = send_http_notification(
 )
 def update_financial_data():
     """
-    Update financial data from the Marketstack API and the latest
-    Interactive Brokers extract.
+    Update Marketstack and IBKR financial data, then fetch FMP earnings.
     """
 
     # ============================================================================
@@ -122,6 +122,19 @@ def update_financial_data():
     def update_duckdb() -> None:
         return load_to_duckdb()
 
+    @task(
+        task_id="get_fmp_earnings_calendar",
+        retries=3,
+        retry_delay=timedelta(minutes=2),
+        retry_exponential_backoff=True,
+        max_retry_delay=timedelta(minutes=10),
+    )
+    def get_fmp_earnings_calendar_task() -> dict:
+        return get_fmp_data(
+            endpoint="earnings-calendar",
+            output_path="/usr/local/airflow/include/data/fmp_earnings-calendar.csv",
+        )
+
     dbt_build_task = BashOperator(
         task_id="dbt_build",
         bash_command="""
@@ -149,6 +162,7 @@ def update_financial_data():
     ibkr_sync_task = get_latest_ibkr_file()
     ibkr_extract_task = move_ibkr_data_to_tables()
     duckdb_load_task = update_duckdb()
+    fmp_earnings_task = get_fmp_earnings_calendar_task()
 
     (
         marketstack_task
@@ -156,6 +170,7 @@ def update_financial_data():
         >> ibkr_extract_task
         >> duckdb_load_task
         >> dbt_build_task
+        >> fmp_earnings_task
     )
 
 
