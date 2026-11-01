@@ -35,12 +35,14 @@ api_key = os.getenv("API_KEY")
 
 # Retrieve current portfolio positions.
 df1 = pd.read_csv("../data/outputs/stocks_to_pick_dev.csv")
+df1.columns = df1.columns.astype(str).str.strip().str.lower()
 
 # Use a common symbol column before merging both dataframes.
 df1 = df1.rename(columns={"asset_symbol": "symbol"})
 
 # Retrieve symbols that could be monitored in the future.
 df2 = pd.read_csv("../data/outputs/stocks_to_monitor_dev.csv")
+df2.columns = df2.columns.astype(str).str.strip().str.lower()
 
 df = pd.concat([df1, df2], ignore_index=True)
 

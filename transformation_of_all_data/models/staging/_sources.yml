@@ -5,6 +5,12 @@ sources:
     description: Raw portfolio and market data loaded into DuckDB.
     schema: main
     tables:
+      - name: raw_transactions_data
+        description: Individual trades accumulated from IBKR Flex reports.
+      - name: raw_historical_transactions_data
+        description: Trades imported from historical IBKR activity statements.
+      - name: ibkr_history_coverage
+        description: Account and date ranges covered by historical statements.
       - name: raw_stock_data
         description: Daily market prices retrieved from Marketstack.
         data_tests:
