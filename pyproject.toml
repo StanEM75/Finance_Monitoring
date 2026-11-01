@@ -27,6 +27,8 @@ dependencies = [
 # Target Python 3.12 (aligned with requires-python).
 target-version = "py312"
 line-length = 88
+# Apply exclusions even when pre-commit passes explicit file paths.
+force-exclude = true
 # Ruff already respects .gitignore; also exclude generated artifacts.
 extend-exclude = [
     "airflow_orchestration/.astro",
