@@ -27,8 +27,8 @@ SELECT
 FROM
     {{ ref('int_sales') }}
 GROUP BY
-    trade_year, 
+    trade_year,
     trade_month
 ORDER BY
-    trade_year, 
+    trade_year,
     MONTHNAME(trade_date)
