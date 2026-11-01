@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import altair as alt
 import pandas as pd
 import streamlit as st
 
@@ -9,6 +10,8 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 OUTPUT_DIRECTORY = PROJECT_ROOT / "data" / "outputs"
 OPEN_POSITIONS_PATH = OUTPUT_DIRECTORY / "open_positions.csv"
 STOCK_PRICES_PATH = OUTPUT_DIRECTORY / "stock_prices.csv"
+MONTHLY_PROFIT_PATH = OUTPUT_DIRECTORY / "profit_by_month.csv"
+STOCK_PROFIT_PATH = OUTPUT_DIRECTORY / "profit_by_stock.csv"
 
 SYMBOL_COLUMN = "asset_symbol"
 PROFIT_COLUMN = "asset_unrealized_profit_and_loss"
@@ -98,6 +101,174 @@ def load_data(
     prices = prices.sort_values([SYMBOL_COLUMN, PRICE_DATE_COLUMN])
 
     return positions, prices
+
+
+@st.cache_data(show_spinner=False)
+def load_profit_data(path: str, modified_at: float, kind: str) -> pd.DataFrame:
+    del modified_at
+    dataframe = pd.read_csv(path)
+    profit_column = (
+        "monthly_realized_profit_and_loss"
+        if kind == "monthly"
+        else "stock_realized_profit_and_loss"
+    )
+    required = (
+        {"trade_month", "trade_year", profit_column}
+        if kind == "monthly"
+        else {SYMBOL_COLUMN, profit_column}
+    )
+    require_columns(dataframe, required, Path(path))
+    dataframe[profit_column] = pd.to_numeric(dataframe[profit_column], errors="raise")
+    if dataframe[profit_column].isna().any():
+        raise ValueError("Un profit réalisé est manquant dans le fichier.")
+    if kind == "monthly":
+        # IBKR/dbt exports English month names; never sort these alphabetically.
+        months = {
+            name.lower(): number
+            for number, name in enumerate(
+                (
+                    "January",
+                    "February",
+                    "March",
+                    "April",
+                    "May",
+                    "June",
+                    "July",
+                    "August",
+                    "September",
+                    "October",
+                    "November",
+                    "December",
+                ),
+                start=1,
+            )
+        }
+        month_numbers = (
+            dataframe["trade_month"]
+            .astype("string")
+            .str.strip()
+            .str.lower()
+            .map(months)
+        )
+        dataframe["month_date"] = pd.to_datetime(
+            {
+                "year": pd.to_numeric(dataframe["trade_year"], errors="raise"),
+                "month": month_numbers,
+                "day": 1,
+            },
+            errors="raise",
+        )
+        if dataframe["month_date"].isna().any():
+            raise ValueError("Un mois ou une année du fichier est invalide.")
+        return dataframe.sort_values("month_date").reset_index(drop=True)
+    dataframe[SYMBOL_COLUMN] = (
+        dataframe[SYMBOL_COLUMN].astype("string").str.strip().str.upper()
+    )
+    if dataframe[SYMBOL_COLUMN].isna().any() or dataframe[SYMBOL_COLUMN].eq("").any():
+        raise ValueError("Un symbole d'action est manquant dans le fichier.")
+    return dataframe.sort_values(
+        [profit_column, SYMBOL_COLUMN], ascending=[False, True]
+    ).reset_index(drop=True)
+
+
+def display_realized_profits() -> None:
+    st.subheader("3. Profits réalisés")
+    st.caption(
+        "Historique des ventes disponible dans les exports, indépendant de la "
+        "période choisie pour les signaux. Les montants sont affichés tels "
+        "qu'exportés, sans conversion de devise."
+    )
+    for path, kind in ((MONTHLY_PROFIT_PATH, "monthly"), (STOCK_PROFIT_PATH, "stock")):
+        title = (
+            "Évolution du profit réalisé par mois"
+            if kind == "monthly"
+            else "Classement des actions par profit réalisé"
+        )
+        st.markdown(f"#### {title}")
+        if not path.is_file():
+            st.info(f"Le fichier {path.name} n'est pas encore disponible.")
+            continue
+        try:
+            dataframe = load_profit_data(str(path), path.stat().st_mtime, kind)
+        except (OSError, ValueError, pd.errors.ParserError) as error:
+            st.error(f"Impossible de charger {path.name} : {error}")
+            continue
+        if dataframe.empty:
+            st.info("Aucun profit réalisé disponible.")
+            continue
+        if kind == "monthly":
+            profit = "monthly_realized_profit_and_loss"
+            chart = (
+                alt.Chart(dataframe)
+                .mark_line(point=True)
+                .encode(
+                    x=alt.X(
+                        "month_date:T", title="Mois", axis=alt.Axis(format="%m/%Y")
+                    ),
+                    y=alt.Y(
+                        f"{profit}:Q",
+                        title="Profit réalisé du mois",
+                        scale=alt.Scale(zero=True),
+                    ),
+                    tooltip=[
+                        alt.Tooltip("month_date:T", title="Mois", format="%m/%Y"),
+                        alt.Tooltip(
+                            f"{profit}:Q", title="Profit réalisé", format=",.2f"
+                        ),
+                    ],
+                )
+                .properties(height=320)
+            )
+            st.altair_chart(chart, width="stretch")
+            st.caption("Seuls les mois présents dans l'export sont affichés.")
+        else:
+            profit = "stock_realized_profit_and_loss"
+            count = int(
+                st.number_input(
+                    "Nombre d'actions dans le classement",
+                    min_value=1,
+                    max_value=len(dataframe),
+                    value=min(10, len(dataframe)),
+                    step=1,
+                )
+            )
+            chart = (
+                alt.Chart(dataframe.head(count))
+                .mark_bar()
+                .encode(
+                    x=alt.X(
+                        f"{profit}:Q",
+                        title="Profit réalisé",
+                        scale=alt.Scale(zero=True),
+                    ),
+                    y=alt.Y(
+                        f"{SYMBOL_COLUMN}:N",
+                        title="Action",
+                        sort=dataframe.head(count)[SYMBOL_COLUMN].tolist(),
+                    ),
+                    color=alt.condition(
+                        alt.datum[profit] >= 0,
+                        alt.value("#16a085"),
+                        alt.value("#d35454"),
+                    ),
+                    tooltip=[
+                        alt.Tooltip(f"{SYMBOL_COLUMN}:N", title="Action"),
+                        alt.Tooltip(
+                            f"{profit}:Q", title="Profit réalisé", format=",.2f"
+                        ),
+                    ],
+                )
+                .properties(height=max(260, count * 28))
+            )
+            st.altair_chart(chart, width="stretch")
+            with st.expander("Voir le classement complet"):
+                display_table(
+                    dataframe,
+                    {
+                        SYMBOL_COLUMN: "Action",
+                        profit: "Profit réalisé",
+                    },
+                )
 
 
 def get_symbol_history(
@@ -415,6 +586,8 @@ else:
         width="stretch",
         height=360,
     )
+
+display_realized_profits()
 
 with st.expander("Méthode et limites"):
     st.markdown(
