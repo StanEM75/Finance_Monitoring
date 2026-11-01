@@ -1,0 +1,5 @@
+version: 2
+
+models:
+  - name: int_transactions
+    description: Cumulative stock and warrant purchases and sales, combining daily Flex reports and historical statements with coverage precedence.

@@ -1,0 +1,18 @@
+version: 2
+
+models:
+  - name: stg_transactions
+    description: Individual trades accumulated from imported IBKR reports; quantities retain IBKR's signed convention.
+    columns:
+      - name: transaction_id
+        data_tests:
+          - not_null
+      - name: buy_sell
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['BUY', 'SELL']
+      - name: trade_date
+        data_tests:
+          - not_null
