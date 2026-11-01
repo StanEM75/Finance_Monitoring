@@ -1,0 +1,5 @@
+version: 2
+
+models:
+  - name: int_sales
+    description: Cumulative stock and warrant sales with symbol, trade date, side, quantity and realized profit and loss.
