@@ -1,6 +1,16 @@
 Overview
 ========
 
+Manual IBKR input
+-----------------
+
+Before running `update_financial_data`, place the IBKR CSV export at
+`include/data/ibkr_extract.csv` in this Astro project. The worker reads it at
+`/usr/local/airflow/include/data/ibkr_extract.csv`. The DAG extracts its tables
+and loads them into DuckDB; it does not download or synchronize the file.
+For standalone scripts in `src`, place the CSV at `data/ibkr_extract.csv`
+in the repository root.
+
 Welcome to Astronomer! This project was generated after you ran 'astro dev init' using the Astronomer CLI. This readme describes the contents of the project, as well as how to run Apache Airflow on your local machine.
 
 Project Contents

@@ -1,0 +1,121 @@
+name: Create or update dev to main PR
+
+on:
+  push:
+    branches:
+      - dev
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: dev-to-main-pr
+  cancel-in-progress: false
+
+jobs:
+  update-pr:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Create or update pull request
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const base = "main";
+            const head = "dev";
+
+            // Retrieve all commits present in dev but absent from main.
+            const commits = [];
+            let hasChanges = false;
+
+            for (let page = 1; ; page++) {
+              const { data } =
+                await github.rest.repos.compareCommitsWithBasehead({
+                  owner,
+                  repo,
+                  basehead: `${base}...${head}`,
+                  per_page: 100,
+                  page,
+                });
+
+              if (page === 1) {
+                hasChanges = (data.files ?? []).length > 0;
+              }
+
+              commits.push(...data.commits);
+
+              if (data.commits.length < 100) {
+                break;
+              }
+            }
+
+            if (!hasChanges || commits.length === 0) {
+              core.info("No changes to merge from dev into main.");
+              return;
+            }
+
+            const date = new Intl.DateTimeFormat("en-CA", {
+              timeZone: "Europe/Paris",
+              year: "numeric",
+              month: "2-digit",
+              day: "2-digit",
+            }).format(new Date());
+
+            const title =
+              `chore(${date}): merge dev into main`;
+
+            const lines = commits.map((commit) => {
+              const subject = commit.commit.message
+                .split("\n")[0]
+                .replace(/[\u0000-\u001f]/g, "");
+
+              return `- ${commit.sha.slice(0, 7)} — ${subject}`;
+            });
+
+            const body = [
+              "## Summary",
+              "Merge the latest changes from `dev` into `main`.",
+              "",
+              `## New commits (${commits.length})`,
+              ...lines,
+              "",
+              "This description is updated automatically on pushes to `dev`.",
+            ].join("\n");
+
+            const pullRequests = await github.paginate(
+              github.rest.pulls.list,
+              {
+                owner,
+                repo,
+                state: "open",
+                base,
+                head: `${owner}:${head}`,
+                per_page: 100,
+              },
+            );
+
+            const existing = pullRequests.find(
+              (pr) => pr.head.repo?.full_name === `${owner}/${repo}`,
+            );
+
+            const result = existing
+              ? await github.rest.pulls.update({
+                  owner,
+                  repo,
+                  pull_number: existing.number,
+                  title,
+                  body,
+                })
+              : await github.rest.pulls.create({
+                  owner,
+                  repo,
+                  base,
+                  head,
+                  title,
+                  body,
+                });
+
+            core.notice(`Pull request: ${result.data.html_url}`);
