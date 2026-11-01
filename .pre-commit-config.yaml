@@ -24,7 +24,8 @@ repos:
 
       - id: sqlfluff
         name: sqlfluff
-        entry: env DBT_OUTPUT_DIR=/tmp/dbt_outputs sqlfluff lint
+        entry: env DBT_OUTPUT_DIR=/tmp/dbt_outputs sqlfluff lint --processes 1
         language: system
+        require_serial: true
         types:
           - sql
