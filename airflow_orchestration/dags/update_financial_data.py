@@ -26,9 +26,6 @@ from include.get_marketstack_data import get_marketstack_stock_data
 
 # Import the function used to load table data into DuckDB
 from include.load_to_duckdb import load_to_duckdb
-
-# Import the function used to synchronize the latest IBKR extract
-from include.synchronize_ibkr_file import synchronize_ibkr_file
 from pendulum import datetime
 
 # ================================================================================
@@ -80,8 +77,7 @@ DAG_FAILURE_NOTIFICATION = send_http_notification(
         1,
         tz="Europe/Paris",
     ),
-    # Cloud Run retrieves the IBKR file at 08:00.
-    # Airflow starts ten minutes later.
+    # Supply include/data/ibkr_extract.csv manually before the daily run.
     schedule="10 8 * * *",
     catchup=False,
     max_active_runs=1,
@@ -106,13 +102,6 @@ def update_financial_data():
     )
     def get_marketstack_data_task() -> dict:
         return get_marketstack_stock_data()
-
-    @task(task_id="synchronize_ibkr_file")
-    def get_latest_ibkr_file() -> dict:
-        return synchronize_ibkr_file(
-            source_path=("/usr/local/airflow/ibkr-drive/ibkr_extract.csv"),
-            destination_path=("/usr/local/airflow/include/data/ibkr_extract.csv"),
-        )
 
     @task(task_id="extract_ibkr_data")
     def move_ibkr_data_to_tables() -> None:
@@ -159,14 +148,12 @@ def update_financial_data():
     # ============================================================================
 
     marketstack_task = get_marketstack_data_task()
-    ibkr_sync_task = get_latest_ibkr_file()
     ibkr_extract_task = move_ibkr_data_to_tables()
     duckdb_load_task = update_duckdb()
     fmp_earnings_task = get_fmp_earnings_calendar_task()
 
     (
         marketstack_task
-        >> ibkr_sync_task
         >> ibkr_extract_task
         >> duckdb_load_task
         >> dbt_build_task
