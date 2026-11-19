@@ -12,6 +12,7 @@ OPEN_POSITIONS_PATH = OUTPUT_DIRECTORY / "open_positions.csv"
 STOCK_PRICES_PATH = OUTPUT_DIRECTORY / "stock_prices.csv"
 MONTHLY_PROFIT_PATH = OUTPUT_DIRECTORY / "profit_by_month.csv"
 STOCK_PROFIT_PATH = OUTPUT_DIRECTORY / "profit_by_stock.csv"
+EARNINGS_PATH = OUTPUT_DIRECTORY / "fmp_earnings-calendar.csv"
 
 SYMBOL_COLUMN = "asset_symbol"
 PROFIT_COLUMN = "asset_unrealized_profit_and_loss"
@@ -276,6 +277,74 @@ def display_realized_profits() -> None:
                         profit: "Realized profit",
                     },
                 )
+
+
+@st.cache_data(show_spinner=False)
+def load_earnings_data(path: str, modified_at: float) -> pd.DataFrame:
+    del modified_at
+    dataframe = pd.read_csv(path)
+    require_columns(dataframe, {"symbol", "date"}, Path(path))
+    dataframe["symbol"] = dataframe["symbol"].astype("string").str.strip().str.upper()
+    if dataframe["symbol"].isna().any() or dataframe["symbol"].eq("").any():
+        raise ValueError("An earnings event is missing its ticker.")
+    dataframe["date"] = pd.to_datetime(dataframe["date"], errors="raise").dt.normalize()
+    if dataframe["date"].isna().any():
+        raise ValueError("An earnings event is missing its announcement date.")
+    for column in ("epsestimated", "epsactual", "revenueestimated", "revenueactual"):
+        if column not in dataframe:
+            dataframe[column] = float("nan")
+        dataframe[column] = pd.to_numeric(dataframe[column], errors="raise")
+    return dataframe.sort_values(["date", "symbol"]).reset_index(drop=True)
+
+
+def display_earnings_calendar() -> None:
+    st.subheader("Earnings calendar")
+    st.caption(
+        "Earnings announcements from the latest FMP export. "
+        "Missing estimates or results are shown as empty values. "
+        "Revenue amounts use the provider's reporting currency without conversion."
+    )
+    if not EARNINGS_PATH.is_file():
+        st.info("The earnings calendar is not available yet. Run the FMP data task.")
+        return
+    try:
+        earnings = load_earnings_data(str(EARNINGS_PATH), EARNINGS_PATH.stat().st_mtime)
+    except (OSError, ValueError, pd.errors.ParserError) as error:
+        st.error(f"Unable to load the earnings calendar: {error}")
+        return
+    if earnings.empty:
+        st.info("No earnings announcements in the latest export.")
+        return
+
+    first_date = earnings["date"].min().date()
+    last_date = earnings["date"].max().date()
+    st.caption(f"Export coverage: {first_date} to {last_date}")
+    if last_date < pd.Timestamp.now(tz="Europe/Paris").date():
+        st.warning("This export only contains past dates. Refresh the FMP data.")
+
+    event_metric, ticker_metric = st.columns(2)
+    event_metric.metric("Earnings announcements", len(earnings))
+    ticker_metric.metric("Companies", earnings["symbol"].nunique())
+    columns = {
+        "symbol": "Ticker",
+        "epsestimated": "Estimated EPS",
+        "epsactual": "Actual EPS",
+        "revenueestimated": "Estimated revenue",
+        "revenueactual": "Actual revenue",
+    }
+    for event_date, events in earnings.groupby("date", sort=True):
+        st.markdown(f"#### {event_date.strftime('%A, %B %d, %Y')}")
+        st.dataframe(
+            events[list(columns)].rename(columns=columns),
+            hide_index=True,
+            width="stretch",
+            column_config={
+                "Estimated EPS": st.column_config.NumberColumn(format="%.2f"),
+                "Actual EPS": st.column_config.NumberColumn(format="%.2f"),
+                "Estimated revenue": st.column_config.NumberColumn(format="localized"),
+                "Actual revenue": st.column_config.NumberColumn(format="localized"),
+            },
+        )
 
 
 def get_symbol_history(
@@ -598,8 +667,7 @@ with realized_tab:
     display_realized_profits()
 
 with earnings_tab:
-    st.subheader("Earnings calendar")
-    st.info("The earnings calendar will be added here soon.")
+    display_earnings_calendar()
 
 with st.expander("Methodology and limitations"):
     st.markdown(
