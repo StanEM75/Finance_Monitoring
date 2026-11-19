@@ -12,6 +12,7 @@ OPEN_POSITIONS_PATH = OUTPUT_DIRECTORY / "open_positions.csv"
 STOCK_PRICES_PATH = OUTPUT_DIRECTORY / "stock_prices.csv"
 MONTHLY_PROFIT_PATH = OUTPUT_DIRECTORY / "profit_by_month.csv"
 STOCK_PROFIT_PATH = OUTPUT_DIRECTORY / "profit_by_stock.csv"
+EARNINGS_PATH = OUTPUT_DIRECTORY / "fmp_earnings-calendar.csv"
 
 SYMBOL_COLUMN = "asset_symbol"
 PROFIT_COLUMN = "asset_unrealized_profit_and_loss"
@@ -41,14 +42,14 @@ def require_columns(
     duplicates = normalized_columns[normalized_columns.duplicated()].unique()
     if len(duplicates):
         raise ValueError(
-            f"Colonnes ambiguës après normalisation dans {source_path}: "
+            f"Ambiguous columns after normalization in {source_path}: "
             + ", ".join(duplicates)
         )
     dataframe.columns = normalized_columns
     missing_columns = required_columns - set(dataframe.columns)
     if missing_columns:
         missing = ", ".join(sorted(missing_columns))
-        raise ValueError(f"Colonnes absentes de {source_path}: {missing}")
+        raise ValueError(f"Missing columns in {source_path}: {missing}")
 
 
 @st.cache_data(show_spinner=False)
@@ -128,7 +129,7 @@ def load_profit_data(path: str, modified_at: float, kind: str) -> pd.DataFrame:
     require_columns(dataframe, required, Path(path))
     dataframe[profit_column] = pd.to_numeric(dataframe[profit_column], errors="raise")
     if dataframe[profit_column].isna().any():
-        raise ValueError("Un profit réalisé est manquant dans le fichier.")
+        raise ValueError("A realized profit value is missing from the file.")
     if kind == "monthly":
         # IBKR/dbt exports English month names; never sort these alphabetically.
         months = {
@@ -167,73 +168,72 @@ def load_profit_data(path: str, modified_at: float, kind: str) -> pd.DataFrame:
             errors="raise",
         )
         if dataframe["month_date"].isna().any():
-            raise ValueError("Un mois ou une année du fichier est invalide.")
+            raise ValueError("The file contains an invalid month or year.")
         return dataframe.sort_values("month_date").reset_index(drop=True)
     dataframe[SYMBOL_COLUMN] = (
         dataframe[SYMBOL_COLUMN].astype("string").str.strip().str.upper()
     )
     if dataframe[SYMBOL_COLUMN].isna().any() or dataframe[SYMBOL_COLUMN].eq("").any():
-        raise ValueError("Un symbole d'action est manquant dans le fichier.")
+        raise ValueError("A stock symbol is missing from the file.")
     return dataframe.sort_values(
         [profit_column, SYMBOL_COLUMN], ascending=[False, True]
     ).reset_index(drop=True)
 
 
 def display_realized_profits() -> None:
-    st.subheader("3. Profits réalisés")
+    st.subheader("Realized profits")
     st.caption(
-        "Historique des ventes disponible dans les exports, indépendant de la "
-        "période choisie pour les signaux. Les montants sont affichés tels "
-        "qu'exportés, sans conversion de devise."
+        "Sales history from the exports, independent of the signal lookback period. "
+        "Amounts are displayed as exported, without currency conversion."
     )
     for path, kind in ((MONTHLY_PROFIT_PATH, "monthly"), (STOCK_PROFIT_PATH, "stock")):
         title = (
-            "Évolution du profit réalisé par mois"
+            "Monthly realized profit"
             if kind == "monthly"
-            else "Classement des actions par profit réalisé"
+            else "Stocks ranked by realized profit"
         )
         st.markdown(f"#### {title}")
         if not path.is_file():
-            st.info(f"Le fichier {path.name} n'est pas encore disponible.")
+            st.info(f"{path.name} is not available yet.")
             continue
         try:
             dataframe = load_profit_data(str(path), path.stat().st_mtime, kind)
         except (OSError, ValueError, pd.errors.ParserError) as error:
-            st.error(f"Impossible de charger {path.name} : {error}")
+            st.error(f"Unable to load {path.name}: {error}")
             continue
         if dataframe.empty:
-            st.info("Aucun profit réalisé disponible.")
+            st.info("No realized profit data available.")
             continue
         if kind == "monthly":
             profit = "monthly_realized_profit_and_loss"
             chart = (
                 alt.Chart(dataframe)
-                .mark_line(point=True)
+                .mark_line(point=True, color="#A77920", strokeWidth=2.5)
                 .encode(
                     x=alt.X(
-                        "month_date:T", title="Mois", axis=alt.Axis(format="%m/%Y")
+                        "month_date:T", title="Month", axis=alt.Axis(format="%m/%Y")
                     ),
                     y=alt.Y(
                         f"{profit}:Q",
-                        title="Profit réalisé du mois",
+                        title="Monthly realized profit",
                         scale=alt.Scale(zero=True),
                     ),
                     tooltip=[
-                        alt.Tooltip("month_date:T", title="Mois", format="%m/%Y"),
+                        alt.Tooltip("month_date:T", title="Month", format="%m/%Y"),
                         alt.Tooltip(
-                            f"{profit}:Q", title="Profit réalisé", format=",.2f"
+                            f"{profit}:Q", title="Realized profit", format=",.2f"
                         ),
                     ],
                 )
                 .properties(height=320)
             )
             st.altair_chart(chart, width="stretch")
-            st.caption("Seuls les mois présents dans l'export sont affichés.")
+            st.caption("Only months included in the export are displayed.")
         else:
             profit = "stock_realized_profit_and_loss"
             count = int(
                 st.number_input(
-                    "Nombre d'actions dans le classement",
+                    "Number of stocks in the ranking",
                     min_value=1,
                     max_value=len(dataframe),
                     value=min(10, len(dataframe)),
@@ -246,37 +246,105 @@ def display_realized_profits() -> None:
                 .encode(
                     x=alt.X(
                         f"{profit}:Q",
-                        title="Profit réalisé",
+                        title="Realized profit",
                         scale=alt.Scale(zero=True),
                     ),
                     y=alt.Y(
                         f"{SYMBOL_COLUMN}:N",
-                        title="Action",
+                        title="Ticker",
                         sort=dataframe.head(count)[SYMBOL_COLUMN].tolist(),
                     ),
                     color=alt.condition(
                         alt.datum[profit] >= 0,
-                        alt.value("#16a085"),
-                        alt.value("#d35454"),
+                        alt.value("#28856C"),
+                        alt.value("#C66559"),
                     ),
                     tooltip=[
-                        alt.Tooltip(f"{SYMBOL_COLUMN}:N", title="Action"),
+                        alt.Tooltip(f"{SYMBOL_COLUMN}:N", title="Ticker"),
                         alt.Tooltip(
-                            f"{profit}:Q", title="Profit réalisé", format=",.2f"
+                            f"{profit}:Q", title="Realized profit", format=",.2f"
                         ),
                     ],
                 )
                 .properties(height=max(260, count * 28))
             )
             st.altair_chart(chart, width="stretch")
-            with st.expander("Voir le classement complet"):
+            with st.expander("View the full ranking"):
                 display_table(
                     dataframe,
                     {
-                        SYMBOL_COLUMN: "Action",
-                        profit: "Profit réalisé",
+                        SYMBOL_COLUMN: "Ticker",
+                        profit: "Realized profit",
                     },
                 )
+
+
+@st.cache_data(show_spinner=False)
+def load_earnings_data(path: str, modified_at: float) -> pd.DataFrame:
+    del modified_at
+    dataframe = pd.read_csv(path)
+    require_columns(dataframe, {"symbol", "date"}, Path(path))
+    dataframe["symbol"] = dataframe["symbol"].astype("string").str.strip().str.upper()
+    if dataframe["symbol"].isna().any() or dataframe["symbol"].eq("").any():
+        raise ValueError("An earnings event is missing its ticker.")
+    dataframe["date"] = pd.to_datetime(dataframe["date"], errors="raise").dt.normalize()
+    if dataframe["date"].isna().any():
+        raise ValueError("An earnings event is missing its announcement date.")
+    for column in ("epsestimated", "epsactual", "revenueestimated", "revenueactual"):
+        if column not in dataframe:
+            dataframe[column] = float("nan")
+        dataframe[column] = pd.to_numeric(dataframe[column], errors="raise")
+    return dataframe.sort_values(["date", "symbol"]).reset_index(drop=True)
+
+
+def display_earnings_calendar() -> None:
+    st.subheader("Earnings calendar")
+    st.caption(
+        "Earnings announcements from the latest FMP export. "
+        "Missing estimates or results are shown as empty values. "
+        "Revenue amounts use the provider's reporting currency without conversion."
+    )
+    if not EARNINGS_PATH.is_file():
+        st.info("The earnings calendar is not available yet. Run the FMP data task.")
+        return
+    try:
+        earnings = load_earnings_data(str(EARNINGS_PATH), EARNINGS_PATH.stat().st_mtime)
+    except (OSError, ValueError, pd.errors.ParserError) as error:
+        st.error(f"Unable to load the earnings calendar: {error}")
+        return
+    if earnings.empty:
+        st.info("No earnings announcements in the latest export.")
+        return
+
+    first_date = earnings["date"].min().date()
+    last_date = earnings["date"].max().date()
+    st.caption(f"Export coverage: {first_date} to {last_date}")
+    if last_date < pd.Timestamp.now(tz="Europe/Paris").date():
+        st.warning("This export only contains past dates. Refresh the FMP data.")
+
+    event_metric, ticker_metric = st.columns(2)
+    event_metric.metric("Earnings announcements", len(earnings))
+    ticker_metric.metric("Companies", earnings["symbol"].nunique())
+    columns = {
+        "symbol": "Ticker",
+        "epsestimated": "Estimated EPS",
+        "epsactual": "Actual EPS",
+        "revenueestimated": "Estimated revenue",
+        "revenueactual": "Actual revenue",
+    }
+    for event_date, events in earnings.groupby("date", sort=True):
+        st.markdown(f"#### {event_date.strftime('%A, %B %d, %Y')}")
+        st.dataframe(
+            events[list(columns)].rename(columns=columns),
+            hide_index=True,
+            width="stretch",
+            column_config={
+                "Estimated EPS": st.column_config.NumberColumn(format="%.2f"),
+                "Actual EPS": st.column_config.NumberColumn(format="%.2f"),
+                "Estimated revenue": st.column_config.NumberColumn(format="localized"),
+                "Actual revenue": st.column_config.NumberColumn(format="localized"),
+            },
+        )
 
 
 def get_symbol_history(
@@ -379,14 +447,14 @@ def sell_signal(
         pd.isna(row.get("observations"))
         or row.get("observations", 0) < minimum_observations
     ):
-        return "DONNÉES INSUFFISANTES"
+        return "INSUFFICIENT DATA"
     if row[PROFIT_COLUMN] <= 0:
-        return "PAS DE PRISE DE BÉNÉFICES"
+        return "NO PROFIT TO TAKE"
     if row["range_position_pct"] >= high_threshold:
-        return "SELL / ALLÉGEMENT À ÉTUDIER"
+        return "CONSIDER SELLING / REDUCING"
     if row["range_position_pct"] <= 30:
-        return "PAS DE SIGNAL DE VENTE"
-    return "CONSERVER / SURVEILLER"
+        return "NO SELL SIGNAL"
+    return "HOLD / MONITOR"
 
 
 def display_table(dataframe: pd.DataFrame, columns: dict[str, str]) -> None:
@@ -402,47 +470,93 @@ st.set_page_config(
     layout="wide",
 )
 
-st.title("📈 Tableau de bord d'aide à la décision")
-st.caption(
-    "Signaux quantitatifs fondés uniquement sur l'historique des prix. "
-    "Ils ne constituent pas un conseil financier."
+st.markdown(
+    """
+    <style>
+    .stApp {
+        background: radial-gradient(ellipse at 85% 0%, #F5D98B66, transparent 42%),
+                    radial-gradient(ellipse at 0% 30%, #CEE9DF55, transparent 45%),
+                    #FAF8F1;
+        color: #243D3A;
+    }
+    .stMainBlockContainer { max-width: 1440px; padding-top: 3rem; }
+    h1, h2, h3 { letter-spacing: -0.035em; }
+    h1 { font-family: Georgia, 'Times New Roman', serif; font-weight: 400; }
+    h3 { font-weight: 500; }
+    .market-masthead {
+        display: flex; justify-content: space-between; align-items: center;
+        gap: 1rem; margin-bottom: 1.5rem; padding-bottom: 1rem;
+        border-bottom: 1px solid #B58A3540;
+        color: #976B1B; font-size: .7rem; letter-spacing: .22em;
+        text-transform: uppercase;
+    }
+    .market-masthead span:last-child { color: #5F6E69; letter-spacing: .12em; }
+    [data-testid="stMetric"] {
+        background: linear-gradient(135deg, #FFFFFF, #FFFDF5);
+        border: 1px solid #B58A352A; border-top: 2px solid #C69B47;
+        border-radius: 12px; padding: 1.2rem 1.4rem; margin: 1rem 0;
+        box-shadow: 0 5px 20px #5f745308;
+    }
+    [data-testid="stMetricLabel"] { color: #5F6E69; }
+    [data-testid="stMetricValue"] {
+        color: #296B5C; font-variant-numeric: tabular-nums;
+        font-weight: 400;
+    }
+    [data-baseweb="tab-list"] {
+        gap: 1.4rem; border-bottom: 1px solid #B58A352A;
+    }
+    [data-baseweb="tab"] {
+        padding: .9rem .25rem; color: #765014 !important; font-weight: 600;
+    }
+    [role="tab"],
+    [role="tab"] *,
+    [data-baseweb="tab"],
+    [data-baseweb="tab"] * {
+        color: #765014 !important;
+        -webkit-text-fill-color: #765014 !important;
+    }
+    [role="tab"][aria-selected="true"] {
+        border-bottom-color: #765014 !important;
+    }
+    [data-baseweb="tab-highlight"] { background-color: #976B1B; }
+    [data-baseweb="tab"]:focus-visible { outline: 2px solid #976B1B; }
+    [data-testid="stDataFrame"] { border-radius: 8px; overflow: hidden; }
+    [data-testid="stCaptionContainer"] { color: #5F6E69; }
+    [data-testid="stExpander"] {
+        border-color: #B58A352A; margin-top: 1.5rem;
+    }
+    @media (max-width: 640px) {
+        .stMainBlockContainer { padding-top: 1.5rem; }
+        .market-masthead { flex-wrap: wrap; }
+        [data-baseweb="tab-list"] { gap: .7rem; }
+        [data-baseweb="tab"] { font-size: .8rem; }
+    }
+    </style>
+    <div class="market-masthead">
+        <span>Portfolio intelligence</span><span>Research &amp; market insights</span>
+    </div>
+    """,
+    unsafe_allow_html=True,
 )
 
-with st.sidebar:
-    st.header("Paramètres")
-    lookback_months = st.slider("Historique analysé (mois)", 3, 12, 6)
-    sell_high_threshold = st.slider(
-        "Seuil haut pour SELL (%)",
-        60,
-        95,
-        80,
-    )
-    buy_low_threshold = st.slider(
-        "Seuil bas pour BUY (%)",
-        5,
-        40,
-        20,
-    )
-    minimum_drawdown = st.slider(
-        "Baisse minimale depuis le plus haut (%)",
-        5,
-        50,
-        15,
-    )
-    minimum_observations = st.slider(
-        "Nombre minimal d'observations",
-        10,
-        60,
-        20,
-    )
+st.title("The market, in perspective.")
+st.caption(
+    "Quantitative signals based solely on historical prices. "
+    "These do not constitute financial advice."
+)
+
+# Fixed analysis defaults.
+lookback_months = 6
+sell_high_threshold = 80
+buy_low_threshold = 20
+minimum_drawdown = 15
+minimum_observations = 20
 
 missing_files = [
     path for path in (OPEN_POSITIONS_PATH, STOCK_PRICES_PATH) if not path.exists()
 ]
 if missing_files:
-    st.error(
-        "Fichier(s) introuvable(s) : " + ", ".join(str(path) for path in missing_files)
-    )
+    st.error("Missing file(s): " + ", ".join(str(path) for path in missing_files))
     st.stop()
 
 try:
@@ -453,11 +567,11 @@ try:
         STOCK_PRICES_PATH.stat().st_mtime,
     )
 except (OSError, ValueError, pd.errors.ParserError) as error:
-    st.error(f"Impossible de charger les données : {error}")
+    st.error(f"Unable to load data: {error}")
     st.stop()
 
 if positions.empty or prices.empty:
-    st.warning("Les fichiers ne contiennent pas assez de données à analyser.")
+    st.warning("The files do not contain enough data for analysis.")
     st.stop()
 
 latest_data_date = prices[PRICE_DATE_COLUMN].max()
@@ -468,8 +582,8 @@ data_age_days = (
 
 if data_age_days > 7:
     st.warning(
-        f"Les derniers prix datent du {latest_data_date.date()} "
-        f"({data_age_days} jours). Les signaux peuvent être obsolètes."
+        f"The latest prices are from {latest_data_date.date()} "
+        f"({data_age_days} days ago). Signals may be outdated."
     )
 
 price_summary = summarize_price_history(
@@ -501,117 +615,144 @@ buy_candidates = price_summary.loc[
     & (price_summary["range_position_pct"] <= buy_low_threshold)
     & (price_summary["drawdown_from_high_pct"] <= -minimum_drawdown)
 ].copy()
-buy_candidates["signal"] = "BUY À ÉTUDIER"
+buy_candidates["signal"] = "CONSIDER BUYING"
 buy_candidates = buy_candidates.sort_values(
     ["range_position_pct", "drawdown_from_high_pct"],
     ascending=[True, True],
 )
 
 metric_1, metric_2, metric_3 = st.columns(3)
-metric_1.metric("Date des derniers prix", str(latest_data_date.date()))
-metric_2.metric("Positions analysées", len(positions))
-metric_3.metric("Candidats BUY détectés", len(buy_candidates))
+metric_1.metric("Latest price date", str(latest_data_date.date()))
+metric_2.metric("Positions analyzed", len(positions))
+metric_3.metric("BUY candidates found", len(buy_candidates))
 
-st.subheader("1. Positions avec les plus fortes plus-values latentes")
-st.write(
-    "Les cinq premières positions sont classées selon leur plus-value "
-    "latente, puis comparées à leur fourchette de prix sur la période."
+unrealized_tab, lows_tab, realized_tab, earnings_tab = st.tabs(
+    [
+        "Unrealized gains",
+        "Stocks near their lowest",
+        "Realized profits",
+        "Earnings calendar",
+    ],
 )
 
-display_table(
-    sell_analysis,
-    {
-        SYMBOL_COLUMN: "Action",
-        PROFIT_COLUMN: "Plus-value latente",
-        "current_price": "Dernier cours",
-        "period_low": "Plus bas",
-        "period_high": "Plus haut",
-        "range_position_pct": "Position dans la fourchette (%)",
-        "drawdown_from_high_pct": "Écart au plus haut (%)",
-        "period_return_pct": "Performance période (%)",
-        "signal": "Signal",
-    },
-)
-
-if not sell_analysis.empty:
-    selected_holding = st.selectbox(
-        "Afficher l'historique d'une position",
-        sell_analysis[SYMBOL_COLUMN].dropna().tolist(),
-    )
-    holding_history = get_symbol_history(
-        prices,
-        selected_holding,
-        start_date,
-    )
-    st.line_chart(
-        holding_history,
-        x=PRICE_DATE_COLUMN,
-        y=["asset_close_price", "asset_low_price", "asset_high_price"],
-        x_label="Date",
-        y_label="Prix",
-        width="stretch",
-        height=360,
+with unrealized_tab:
+    st.subheader("Positions with the highest unrealized gains")
+    st.write(
+        "The top five positions are ranked by unrealized gains, then compared "
+        "with their price range over the six-month lookback period."
     )
 
-st.subheader("2. Actions non détenues proches de leurs plus bas")
-st.write(
-    "Un candidat BUY doit être situé sous le seuil bas choisi et avoir "
-    "reculé d'au moins le pourcentage défini depuis son plus haut."
-)
-
-if buy_candidates.empty:
-    st.info("Aucun signal BUY ne respecte actuellement tous les critères.")
-else:
     display_table(
-        buy_candidates,
+        sell_analysis,
         {
-            SYMBOL_COLUMN: "Action",
-            "current_price": "Dernier cours",
-            "period_low": "Plus bas",
-            "period_high": "Plus haut",
-            "range_position_pct": "Position dans la fourchette (%)",
-            "drawdown_from_high_pct": "Écart au plus haut (%)",
-            "period_return_pct": "Performance période (%)",
+            SYMBOL_COLUMN: "Ticker",
+            PROFIT_COLUMN: "Unrealized gain",
+            "current_price": "Latest price",
+            "period_low": "Period low",
+            "period_high": "Period high",
+            "range_position_pct": "Position within range (%)",
+            "drawdown_from_high_pct": "Drawdown from high (%)",
+            "period_return_pct": "Period return (%)",
             "signal": "Signal",
         },
     )
 
-    selected_candidate = st.selectbox(
-        "Afficher l'historique d'un candidat BUY",
-        buy_candidates[SYMBOL_COLUMN].tolist(),
-    )
-    candidate_history = get_symbol_history(
-        prices,
-        selected_candidate,
-        start_date,
-    )
-    st.line_chart(
-        candidate_history,
-        x=PRICE_DATE_COLUMN,
-        y=["asset_close_price", "asset_low_price", "asset_high_price"],
-        x_label="Date",
-        y_label="Prix",
-        width="stretch",
-        height=360,
+    if not sell_analysis.empty:
+        selected_holding = st.selectbox(
+            "View price history for a holding",
+            sell_analysis[SYMBOL_COLUMN].dropna().tolist(),
+        )
+        holding_history = get_symbol_history(
+            prices,
+            selected_holding,
+            start_date,
+        )
+        st.line_chart(
+            holding_history.rename(
+                columns={
+                    "asset_close_price": "Close",
+                    "asset_low_price": "Low",
+                    "asset_high_price": "High",
+                }
+            ),
+            x=PRICE_DATE_COLUMN,
+            y=["Close", "Low", "High"],
+            color=["#A77920", "#548FA8", "#28856C"],
+            x_label="Date",
+            y_label="Price",
+            width="stretch",
+            height=360,
+        )
+
+with lows_tab:
+    st.subheader("Stocks not held trading near their lows")
+    st.write(
+        "A BUY candidate must be below the lower threshold and have "
+        "fallen by at least the specified percentage from its high."
     )
 
-display_realized_profits()
+    if buy_candidates.empty:
+        st.info("No BUY signals currently meet all criteria.")
+    else:
+        display_table(
+            buy_candidates,
+            {
+                SYMBOL_COLUMN: "Ticker",
+                "current_price": "Latest price",
+                "period_low": "Period low",
+                "period_high": "Period high",
+                "range_position_pct": "Position within range (%)",
+                "drawdown_from_high_pct": "Drawdown from high (%)",
+                "period_return_pct": "Period return (%)",
+                "signal": "Signal",
+            },
+        )
 
-with st.expander("Méthode et limites"):
+        selected_candidate = st.selectbox(
+            "View price history for a BUY candidate",
+            buy_candidates[SYMBOL_COLUMN].tolist(),
+        )
+        candidate_history = get_symbol_history(
+            prices,
+            selected_candidate,
+            start_date,
+        )
+        st.line_chart(
+            candidate_history.rename(
+                columns={
+                    "asset_close_price": "Close",
+                    "asset_low_price": "Low",
+                    "asset_high_price": "High",
+                }
+            ),
+            x=PRICE_DATE_COLUMN,
+            y=["Close", "Low", "High"],
+            color=["#A77920", "#548FA8", "#28856C"],
+            x_label="Date",
+            y_label="Price",
+            width="stretch",
+            height=360,
+        )
+
+with realized_tab:
+    display_realized_profits()
+
+with earnings_tab:
+    display_earnings_calendar()
+
+with st.expander("Methodology and limitations"):
     st.markdown(
         f"""
-        - Période analysée : **{lookback_months} mois**, terminant le
+        - Lookback period: **{lookback_months} months**, ending on
           **{latest_data_date.date()}**.
-        - Un signal SELL est affiché pour une position bénéficiaire lorsque
-          le dernier cours se situe dans les **{100 - sell_high_threshold}%**
-          supérieurs de sa fourchette historique.
-        - Un signal BUY est affiché pour une action non détenue lorsque son
-          cours se situe dans les **{buy_low_threshold}%** inférieurs de sa
-          fourchette et au moins **{minimum_drawdown}%** sous son plus haut.
-        - Lorsque l'information est disponible, les historiques sont comparés
-          sur une même place de cotation.
-        - Un prix bas peut refléter une détérioration fondamentale. Les
-          résultats n'intègrent ni actualités, ni valorisation, ni risque,
-          ni fiscalité, ni objectifs personnels.
+        - A SELL signal is shown for a profitable holding when its latest
+          price is in the top **{100 - sell_high_threshold}%** of its
+          historical range.
+        - A BUY signal is shown for a stock not held when its price is in
+          the bottom **{buy_low_threshold}%** of its range and at least
+          **{minimum_drawdown}%** below its high.
+        - When available, price histories are compared on the same exchange.
+        - A low price may reflect deteriorating fundamentals. Results do not
+          account for news, valuation, risk, taxes, or personal objectives.
         """
     )
