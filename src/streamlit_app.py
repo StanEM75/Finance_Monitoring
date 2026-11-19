@@ -208,7 +208,7 @@ def display_realized_profits() -> None:
             profit = "monthly_realized_profit_and_loss"
             chart = (
                 alt.Chart(dataframe)
-                .mark_line(point=True)
+                .mark_line(point=True, color="#A77920", strokeWidth=2.5)
                 .encode(
                     x=alt.X(
                         "month_date:T", title="Month", axis=alt.Axis(format="%m/%Y")
@@ -256,8 +256,8 @@ def display_realized_profits() -> None:
                     ),
                     color=alt.condition(
                         alt.datum[profit] >= 0,
-                        alt.value("#16a085"),
-                        alt.value("#d35454"),
+                        alt.value("#28856C"),
+                        alt.value("#C66559"),
                     ),
                     tooltip=[
                         alt.Tooltip(f"{SYMBOL_COLUMN}:N", title="Ticker"),
@@ -470,7 +470,76 @@ st.set_page_config(
     layout="wide",
 )
 
-st.title("📈 Stock decision dashboard")
+st.markdown(
+    """
+    <style>
+    .stApp {
+        background: radial-gradient(ellipse at 85% 0%, #F5D98B66, transparent 42%),
+                    radial-gradient(ellipse at 0% 30%, #CEE9DF55, transparent 45%),
+                    #FAF8F1;
+        color: #243D3A;
+    }
+    .stMainBlockContainer { max-width: 1440px; padding-top: 3rem; }
+    h1, h2, h3 { letter-spacing: -0.035em; }
+    h1 { font-family: Georgia, 'Times New Roman', serif; font-weight: 400; }
+    h3 { font-weight: 500; }
+    .market-masthead {
+        display: flex; justify-content: space-between; align-items: center;
+        gap: 1rem; margin-bottom: 1.5rem; padding-bottom: 1rem;
+        border-bottom: 1px solid #B58A3540;
+        color: #976B1B; font-size: .7rem; letter-spacing: .22em;
+        text-transform: uppercase;
+    }
+    .market-masthead span:last-child { color: #5F6E69; letter-spacing: .12em; }
+    [data-testid="stMetric"] {
+        background: linear-gradient(135deg, #FFFFFF, #FFFDF5);
+        border: 1px solid #B58A352A; border-top: 2px solid #C69B47;
+        border-radius: 12px; padding: 1.2rem 1.4rem; margin: 1rem 0;
+        box-shadow: 0 5px 20px #5f745308;
+    }
+    [data-testid="stMetricLabel"] { color: #5F6E69; }
+    [data-testid="stMetricValue"] {
+        color: #296B5C; font-variant-numeric: tabular-nums;
+        font-weight: 400;
+    }
+    [data-baseweb="tab-list"] {
+        gap: 1.4rem; border-bottom: 1px solid #B58A352A;
+    }
+    [data-baseweb="tab"] {
+        padding: .9rem .25rem; color: #765014 !important; font-weight: 600;
+    }
+    [role="tab"],
+    [role="tab"] *,
+    [data-baseweb="tab"],
+    [data-baseweb="tab"] * {
+        color: #765014 !important;
+        -webkit-text-fill-color: #765014 !important;
+    }
+    [role="tab"][aria-selected="true"] {
+        border-bottom-color: #765014 !important;
+    }
+    [data-baseweb="tab-highlight"] { background-color: #976B1B; }
+    [data-baseweb="tab"]:focus-visible { outline: 2px solid #976B1B; }
+    [data-testid="stDataFrame"] { border-radius: 8px; overflow: hidden; }
+    [data-testid="stCaptionContainer"] { color: #5F6E69; }
+    [data-testid="stExpander"] {
+        border-color: #B58A352A; margin-top: 1.5rem;
+    }
+    @media (max-width: 640px) {
+        .stMainBlockContainer { padding-top: 1.5rem; }
+        .market-masthead { flex-wrap: wrap; }
+        [data-baseweb="tab-list"] { gap: .7rem; }
+        [data-baseweb="tab"] { font-size: .8rem; }
+    }
+    </style>
+    <div class="market-masthead">
+        <span>Portfolio intelligence</span><span>Research &amp; market insights</span>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+
+st.title("The market, in perspective.")
 st.caption(
     "Quantitative signals based solely on historical prices. "
     "These do not constitute financial advice."
@@ -563,7 +632,7 @@ unrealized_tab, lows_tab, realized_tab, earnings_tab = st.tabs(
         "Stocks near their lowest",
         "Realized profits",
         "Earnings calendar",
-    ]
+    ],
 )
 
 with unrealized_tab:
@@ -608,6 +677,7 @@ with unrealized_tab:
             ),
             x=PRICE_DATE_COLUMN,
             y=["Close", "Low", "High"],
+            color=["#A77920", "#548FA8", "#28856C"],
             x_label="Date",
             y_label="Price",
             width="stretch",
@@ -657,6 +727,7 @@ with lows_tab:
             ),
             x=PRICE_DATE_COLUMN,
             y=["Close", "Low", "High"],
+            color=["#A77920", "#548FA8", "#28856C"],
             x_label="Date",
             y_label="Price",
             width="stretch",
