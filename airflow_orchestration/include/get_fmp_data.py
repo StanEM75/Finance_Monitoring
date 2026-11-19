@@ -96,7 +96,7 @@ def get_fmp_data(
     destination = (
         Path(output_path)
         if output_path is not None
-        else Path(__file__).resolve().parent / "data" / f"fmp_{endpoint}.csv"
+        else PROJECT_ROOT / "data" / "outputs" / f"fmp_{endpoint}.csv"
     )
     destination.parent.mkdir(parents=True, exist_ok=True)
     temporary_path = None
