@@ -37,6 +37,14 @@ def require_columns(
     required_columns: set[str],
     source_path: Path,
 ) -> None:
+    normalized_columns = dataframe.columns.astype(str).str.strip().str.lower()
+    duplicates = normalized_columns[normalized_columns.duplicated()].unique()
+    if len(duplicates):
+        raise ValueError(
+            f"Colonnes ambiguës après normalisation dans {source_path}: "
+            + ", ".join(duplicates)
+        )
+    dataframe.columns = normalized_columns
     missing_columns = required_columns - set(dataframe.columns)
     if missing_columns:
         missing = ", ".join(sorted(missing_columns))
