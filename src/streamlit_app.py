@@ -180,7 +180,7 @@ def load_profit_data(path: str, modified_at: float, kind: str) -> pd.DataFrame:
 
 
 def display_realized_profits() -> None:
-    st.subheader("3. Realized profits")
+    st.subheader("Realized profits")
     st.caption(
         "Sales history from the exports, independent of the signal lookback period. "
         "Amounts are displayed as exported, without currency conversion."
@@ -407,33 +407,12 @@ st.caption(
     "These do not constitute financial advice."
 )
 
-with st.sidebar:
-    st.header("Settings")
-    lookback_months = st.slider("Lookback period (months)", 3, 12, 6)
-    sell_high_threshold = st.slider(
-        "SELL upper threshold (%)",
-        60,
-        95,
-        80,
-    )
-    buy_low_threshold = st.slider(
-        "BUY lower threshold (%)",
-        5,
-        40,
-        20,
-    )
-    minimum_drawdown = st.slider(
-        "Minimum drawdown from the high (%)",
-        5,
-        50,
-        15,
-    )
-    minimum_observations = st.slider(
-        "Minimum number of observations",
-        10,
-        60,
-        20,
-    )
+# Fixed analysis defaults.
+lookback_months = 6
+sell_high_threshold = 80
+buy_low_threshold = 20
+minimum_drawdown = 15
+minimum_observations = 20
 
 missing_files = [
     path for path in (OPEN_POSITIONS_PATH, STOCK_PRICES_PATH) if not path.exists()
@@ -509,66 +488,27 @@ metric_1.metric("Latest price date", str(latest_data_date.date()))
 metric_2.metric("Positions analyzed", len(positions))
 metric_3.metric("BUY candidates found", len(buy_candidates))
 
-st.subheader("1. Positions with the highest unrealized gains")
-st.write(
-    "The top five positions are ranked by unrealized gains, then compared "
-    "with their price range over the selected period."
+unrealized_tab, lows_tab, realized_tab, earnings_tab = st.tabs(
+    [
+        "Unrealized gains",
+        "Stocks near their lowest",
+        "Realized profits",
+        "Earnings calendar",
+    ]
 )
 
-display_table(
-    sell_analysis,
-    {
-        SYMBOL_COLUMN: "Ticker",
-        PROFIT_COLUMN: "Unrealized gain",
-        "current_price": "Latest price",
-        "period_low": "Period low",
-        "period_high": "Period high",
-        "range_position_pct": "Position within range (%)",
-        "drawdown_from_high_pct": "Drawdown from high (%)",
-        "period_return_pct": "Period return (%)",
-        "signal": "Signal",
-    },
-)
-
-if not sell_analysis.empty:
-    selected_holding = st.selectbox(
-        "View price history for a holding",
-        sell_analysis[SYMBOL_COLUMN].dropna().tolist(),
-    )
-    holding_history = get_symbol_history(
-        prices,
-        selected_holding,
-        start_date,
-    )
-    st.line_chart(
-        holding_history.rename(
-            columns={
-                "asset_close_price": "Close",
-                "asset_low_price": "Low",
-                "asset_high_price": "High",
-            }
-        ),
-        x=PRICE_DATE_COLUMN,
-        y=["Close", "Low", "High"],
-        x_label="Date",
-        y_label="Price",
-        width="stretch",
-        height=360,
+with unrealized_tab:
+    st.subheader("Positions with the highest unrealized gains")
+    st.write(
+        "The top five positions are ranked by unrealized gains, then compared "
+        "with their price range over the six-month lookback period."
     )
 
-st.subheader("2. Stocks not held trading near their lows")
-st.write(
-    "A BUY candidate must be below the selected lower threshold and have "
-    "fallen by at least the specified percentage from its high."
-)
-
-if buy_candidates.empty:
-    st.info("No BUY signals currently meet all criteria.")
-else:
     display_table(
-        buy_candidates,
+        sell_analysis,
         {
             SYMBOL_COLUMN: "Ticker",
+            PROFIT_COLUMN: "Unrealized gain",
             "current_price": "Latest price",
             "period_low": "Period low",
             "period_high": "Period high",
@@ -579,32 +519,87 @@ else:
         },
     )
 
-    selected_candidate = st.selectbox(
-        "View price history for a BUY candidate",
-        buy_candidates[SYMBOL_COLUMN].tolist(),
-    )
-    candidate_history = get_symbol_history(
-        prices,
-        selected_candidate,
-        start_date,
-    )
-    st.line_chart(
-        candidate_history.rename(
-            columns={
-                "asset_close_price": "Close",
-                "asset_low_price": "Low",
-                "asset_high_price": "High",
-            }
-        ),
-        x=PRICE_DATE_COLUMN,
-        y=["Close", "Low", "High"],
-        x_label="Date",
-        y_label="Price",
-        width="stretch",
-        height=360,
+    if not sell_analysis.empty:
+        selected_holding = st.selectbox(
+            "View price history for a holding",
+            sell_analysis[SYMBOL_COLUMN].dropna().tolist(),
+        )
+        holding_history = get_symbol_history(
+            prices,
+            selected_holding,
+            start_date,
+        )
+        st.line_chart(
+            holding_history.rename(
+                columns={
+                    "asset_close_price": "Close",
+                    "asset_low_price": "Low",
+                    "asset_high_price": "High",
+                }
+            ),
+            x=PRICE_DATE_COLUMN,
+            y=["Close", "Low", "High"],
+            x_label="Date",
+            y_label="Price",
+            width="stretch",
+            height=360,
+        )
+
+with lows_tab:
+    st.subheader("Stocks not held trading near their lows")
+    st.write(
+        "A BUY candidate must be below the lower threshold and have "
+        "fallen by at least the specified percentage from its high."
     )
 
-display_realized_profits()
+    if buy_candidates.empty:
+        st.info("No BUY signals currently meet all criteria.")
+    else:
+        display_table(
+            buy_candidates,
+            {
+                SYMBOL_COLUMN: "Ticker",
+                "current_price": "Latest price",
+                "period_low": "Period low",
+                "period_high": "Period high",
+                "range_position_pct": "Position within range (%)",
+                "drawdown_from_high_pct": "Drawdown from high (%)",
+                "period_return_pct": "Period return (%)",
+                "signal": "Signal",
+            },
+        )
+
+        selected_candidate = st.selectbox(
+            "View price history for a BUY candidate",
+            buy_candidates[SYMBOL_COLUMN].tolist(),
+        )
+        candidate_history = get_symbol_history(
+            prices,
+            selected_candidate,
+            start_date,
+        )
+        st.line_chart(
+            candidate_history.rename(
+                columns={
+                    "asset_close_price": "Close",
+                    "asset_low_price": "Low",
+                    "asset_high_price": "High",
+                }
+            ),
+            x=PRICE_DATE_COLUMN,
+            y=["Close", "Low", "High"],
+            x_label="Date",
+            y_label="Price",
+            width="stretch",
+            height=360,
+        )
+
+with realized_tab:
+    display_realized_profits()
+
+with earnings_tab:
+    st.subheader("Earnings calendar")
+    st.info("The earnings calendar will be added here soon.")
 
 with st.expander("Methodology and limitations"):
     st.markdown(
