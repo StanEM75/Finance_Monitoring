@@ -121,7 +121,6 @@ def update_financial_data():
     def get_fmp_earnings_calendar_task() -> dict:
         return get_fmp_data(
             endpoint="earnings-calendar",
-            output_path="/usr/local/airflow/include/data/fmp_earnings-calendar.csv",
         )
 
     dbt_build_task = BashOperator(
